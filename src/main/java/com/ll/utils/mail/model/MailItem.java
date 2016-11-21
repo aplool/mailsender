@@ -12,14 +12,14 @@ import java.util.List;
  */
 public class MailItem {
     public MailAddress from;
-    public List<MailAddress> to = new ArrayList<>();
-    public List<MailAddress> cc = new ArrayList<>();
-    public List<MailAddress> bcc = new ArrayList<>();
+    public List<MailAddress> to = new ArrayList<MailAddress>();
+    public List<MailAddress> cc = new ArrayList<MailAddress>();
+    public List<MailAddress> bcc = new ArrayList<MailAddress>();
     public String subject = "Mail Subject";
     public String message = "Test mail";
     public String contentType = EmailConstants.TEXT_PLAIN;
-    public List<AttachmentItem> attachmentItems = new ArrayList<>();
-    public List<EmbedItem> embedItems = new ArrayList<>();
+    public List<AttachmentItem> attachmentItems = new ArrayList<AttachmentItem>();
+    public List<EmbedItem> embedItems = new ArrayList<EmbedItem>();
 
     public boolean isMultipart() {
         return !attachmentItems.isEmpty();
