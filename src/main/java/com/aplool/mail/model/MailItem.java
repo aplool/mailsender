@@ -1,6 +1,5 @@
-package com.ll.utils.mail.model;
+package com.aplool.mail.model;
 
-import org.apache.commons.mail.EmailAttachment;
 import org.apache.commons.mail.EmailConstants;
 
 import java.net.URL;

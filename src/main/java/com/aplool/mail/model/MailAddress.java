@@ -1,4 +1,4 @@
-package com.ll.utils.mail.model;
+package com.aplool.mail.model;
 
 /**
  * Created by leokao on 11/18/2016.
