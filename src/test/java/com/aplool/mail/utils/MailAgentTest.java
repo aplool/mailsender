@@ -1,16 +1,29 @@
 package com.aplool.mail.utils;
 
-
 import com.aplool.mail.model.MailAddress;
 import com.aplool.mail.model.MailHostConfig;
 import com.aplool.mail.model.MailItem;
 import org.apache.commons.mail.EmailConstants;
+import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.net.URL;
 
 /**
  * Created by leokao on 11/17/2016.
  */
 public class MailAgentTest {
+    private static final Logger mLogger = LoggerFactory.getLogger(MailAgentTest.class);
+    private MailHostConfig mMailHostConfig = new MailHostConfig();
+
+    @Before
+    public void initData() {
+        URL url = this.getClass().getClassLoader().getResource("mailHost.config");
+        mMailHostConfig = new MailHostConfig(url.getPath());
+    }
+
     @Test
     public void testSendMail() {
 //        Received: from %RND_IP by %PROXY; %RND_DATE_TIME
@@ -34,24 +47,24 @@ public class MailAgentTest {
 //                %MESSAGE_BODY
 //
 //                ----%BOUNDARY--
-        MailHostConfig mailHostConfig = new MailHostConfig();
-        mailHostConfig.setHostAddress("mail.coretronic.com");
-        mailHostConfig.setHostPort(25);
-        mailHostConfig.setNeedAuth(true);
-        mailHostConfig.setUserName("EC");
-        mailHostConfig.setUserPassword("Coretronic0232-0217ABCDEF");
-        MailAgent mailAgent = new MailAgent(mailHostConfig);
+
+        MailAgent mailAgent = new MailAgent(mMailHostConfig);
+
         MailItem mailItem = new MailItem();
-        mailItem.contentType = EmailConstants.TEXT_HTML;
-        MailAddress fromEmail = new MailAddress("EC@coretronic.com","EC");
+        MailAddress fromEmail = new MailAddress("EC@coretronic.com", "EC");
         mailItem.from = fromEmail;
-        MailAddress toEmail = new MailAddress("leo.kao@coretronic.com","Leo Kao");
+        MailAddress toEmail = new MailAddress("leo.kao@coretronic.com", "Leo Kao");
         mailItem.addTo(toEmail);
         mailItem.subject = "TestMail 測試郵件";
-        mailItem.message = "Thsi is Test Mail 這是測試郵件";
-        mailAgent.sendMail(mailItem);
+//        mailItem.contentType = EmailConstants.TEXT_HTML;
+//        mailItem.message = "Thsi is Test Mail 這是測試郵件";
+//        mailAgent.sendMail(mailItem);
         mailItem.contentType = EmailConstants.TEXT_HTML;
         mailItem.message = "<h2>Thsi is Test Mail 這是測試郵件</h2>";
-        mailAgent.sendMail(mailItem);
+        boolean sendResult = mailAgent.sendMail(mailItem);
+        mLogger.info("Send Mail Subject: {} => Result: {}", mailItem.subject, sendResult);
+        mailItem.to.forEach(mailTo -> mLogger.info("To User : {}  , Mail : {}", mailTo.mailUser, mailTo.mailAddress));
+        mailItem.cc.forEach(mailTo -> mLogger.info("CC User : {}  , Mail : {}", mailTo.mailUser, mailTo.mailAddress));
+        mailItem.bcc.forEach(mailTo -> mLogger.info("BCC User : {}  , Mail : {}", mailTo.mailUser, mailTo.mailAddress));
     }
 }
