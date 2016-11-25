@@ -1,26 +1,33 @@
 package com.aplool.macro;
 
+import java.util.regex.Pattern;
+
 /**
  * Created by longtai on 2016/11/21.
  */
 public abstract class Marco {
-    String mPattern;
-    public Marco(){
-        mPattern = null;
+    protected MarcoExecutor mExecutor;
+    String mExpression;
+
+    public Marco(MarcoExecutor executor){
+        mExecutor = executor;
+        mExpression = null;
         init();
     }
-    public Marco(String pattern){
-        mPattern = pattern;
+    public Marco(MarcoExecutor executor,String pattern){
+        mExecutor = executor;
+        mExpression = pattern;
         init();
     }
 
-    public String getPattern(){
-        return mPattern;
+    public String getExpression(){
+        return mExpression;
     }
 
     abstract protected void init();
 
     abstract public String generate();
+    abstract public String generate(MarcoExecutor executor);
     public String generate(String parameter){
         return "";
     }

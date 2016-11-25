@@ -10,15 +10,15 @@ import java.util.concurrent.ThreadLocalRandom;
 public class RandomChar extends Marco {
     Generex mGenerator;
 
-    public RandomChar(){
-        super("");
+    public RandomChar(MarcoExecutor executor) {
+        super(executor);
     }
-    public RandomChar(String pattern){
-        super(pattern);
+    public RandomChar(MarcoExecutor executor, String pattern) {
+        super(executor,pattern);
     }
     @Override
-    protected void init() {
-        mGenerator = new Generex(this.getPattern());
+    protected void init()  {
+        mGenerator = new Generex(this.getExpression());
     }
 
 
@@ -26,8 +26,16 @@ public class RandomChar extends Marco {
     public String generate() {
         return mGenerator.random();
     }
+
+    @Override
+    public String generate(MarcoExecutor executor) {
+        return mGenerator.random();
+    }
+
     @Override
     public String generate(String parameter) {
+        if("".equals(parameter)) return generate();
+
         String[] ss = parameter.split("-");
         if(ss.length < 2) return generate();
         int min = Integer.parseInt(ss[0]);
