@@ -8,12 +8,15 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 
+import static org.junit.Assert.*;
+
 /**
  * Created by leokao on 11/22/2016.
  */
 public class SmtpServerTest {
     private static final Logger mLogger = LoggerFactory.getLogger(SmtpServerTest.class);
     private SmtpServer mSmtpServer = null;
+
 
     @Before
     public void initData() {
@@ -24,7 +27,9 @@ public class SmtpServerTest {
 
     @Test
     public void testSmtpServer() {
-        mLogger.info("{} isReachable {}", mSmtpServer.getServerIP(), mSmtpServer.testReachable());
-        mLogger.info("{} isConnectSMTP {}", mSmtpServer.getServerAddress(), mSmtpServer.checkSmtp(true));
+//        mLogger.info("{} isReachable {}", mSmtpServer.getServerIP() + "-" + mSmtpServer.getServerAddress(), mSmtpServer.testReachable());
+        mLogger.info("{} isConnectSMTP {}", mSmtpServer.getServerIP() + "-" + mSmtpServer.getServerAddress(), mSmtpServer.checkSmtp(false, true));
+        assertEquals(true, mSmtpServer.checkSmtp(false, true));
+//        mLogger.info("{} testSendMail {} ",  mSmtpServer.getServerIP() + "-" + mSmtpServer.getServerAddress(), mSmtpServer.testSendMail());
     }
 }

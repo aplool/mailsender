@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * Created by leokao on 11/17/2016.
  */
@@ -62,9 +64,6 @@ public class MailAgentTest {
         mailItem.contentType = EmailConstants.TEXT_HTML;
         mailItem.message = "<h2>Thsi is Test Mail 這是測試郵件</h2>";
         boolean sendResult = mailAgent.sendMail(mailItem);
-        mLogger.info("Send Mail Subject: {} => Result: {}", mailItem.subject, sendResult);
-        mailItem.to.forEach(mailTo -> mLogger.info("To User : {}  , Mail : {}", mailTo.mailUser, mailTo.mailAddress));
-        mailItem.cc.forEach(mailTo -> mLogger.info("CC User : {}  , Mail : {}", mailTo.mailUser, mailTo.mailAddress));
-        mailItem.bcc.forEach(mailTo -> mLogger.info("BCC User : {}  , Mail : {}", mailTo.mailUser, mailTo.mailAddress));
+        assertEquals(true, sendResult);
     }
 }

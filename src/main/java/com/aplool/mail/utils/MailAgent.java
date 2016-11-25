@@ -20,6 +20,7 @@ import java.util.Map;
  */
 public class MailAgent {
     private static final Logger mLogger = LoggerFactory.getLogger(MailAgent.class);
+    private static final boolean debugFlag = false;
     private MailHostConfig mMailHostConfig = null;
     public static final String MAIL_HEADER_MESSAGE_ID = "Message-ID";
     public static final String MAIL_HEADER_SEND_DATE = "Date";
@@ -35,25 +36,30 @@ public class MailAgent {
     }
 
     public boolean sendMail(MailItem mailItem) {
-        boolean sendSuccess = false;
-        Email email = this.createEmail(mailItem);
-
         try {
-            email.send();
+            Email email = this.createEmail(mailItem);
+            String messageId = email.send();
+            mLogger.info("Send Mail Subject: {} => Result: {}", mailItem.subject, true);
+            mailItem.to.forEach(mailTo -> mLogger.info("To User : {}  , Mail : {}", mailTo.mailUser, mailTo.mailAddress));
+            mailItem.cc.forEach(mailTo -> mLogger.info("CC User : {}  , Mail : {}", mailTo.mailUser, mailTo.mailAddress));
+            mailItem.bcc.forEach(mailTo -> mLogger.info("BCC User : {}  , Mail : {}", mailTo.mailUser, mailTo.mailAddress));
             return true;
         }catch (Exception e) {
-            e.printStackTrace();
+            mLogger.info("Send Mail Subject: {} => Result: {}", mailItem.subject, false);
+            if (debugFlag) {
+                e.printStackTrace();
+            }
             return false;
         }
     }
 
 
-    private Email createEmail(MailItem mailItem) {
+    private Email createEmail(MailItem mailItem) throws Exception{
         MyMultiPartEmail email = new MyMultiPartEmail();
 
         Map<String, String> mailHeaders = buildHeaders();
         email.setMessageId(mailHeaders.get(this.MAIL_HEADER_MESSAGE_ID));
-        mLogger.info(this.MAIL_HEADER_MESSAGE_ID + ":" + email.getMessageId());
+//        mLogger.info(this.MAIL_HEADER_MESSAGE_ID + ":" + email.getMessageId());
 
         email.setHeaders(mailHeaders);
         email.setCharset(EmailConstants.UTF_8);
@@ -78,8 +84,7 @@ public class MailAgent {
             email.setSubject(mailItem.subject);
             email.addPart(mailItem.message, mailItem.contentType + ";" + this.MAIL_HEADER_ENCODE);
         } catch (Exception e) {
-            e.getStackTrace();
-            mLogger.error("Error", e);
+            throw e;
         }
         return email;
     }
@@ -90,7 +95,7 @@ public class MailAgent {
         mailHeaders.put(this.MAIL_HEADER_RECEIVED, "from " + this.getFromIP() + " by " + this.getProxyIP() + "; " + sendDate);
         mailHeaders.put(this.MAIL_HEADER_SEND_DATE, sendDate);
         mailHeaders.put(this.MAIL_HEADER_MESSAGE_ID, this.genMessageId());
-        //mailHeaders.put(this.MAIL_HEADER_X_MAILER, "sendMail");
+        mailHeaders.put(this.MAIL_HEADER_X_MAILER, "sendMail");
         mailHeaders.put(this.MAIL_HEADER_X_PRIORITY, "3");
         mailHeaders.put(this.MAIL_HEADER_X_MSMAIL_PRIORITY, "3");
         return mailHeaders;
