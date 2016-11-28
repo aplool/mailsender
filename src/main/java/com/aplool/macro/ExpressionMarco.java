@@ -30,9 +30,5 @@ public class ExpressionMarco extends Marco {
         return mExecutor.execute(this.getExpression());
     }
 
-    @Override
-    public String generate(MarcoExecutor executor) {
-        log.info("Expression : {}", this.getExpression());
-         return executor.execute(this.getExpression());
-    }
+
 }

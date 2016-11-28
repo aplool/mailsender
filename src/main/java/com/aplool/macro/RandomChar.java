@@ -28,11 +28,6 @@ public class RandomChar extends Marco {
     }
 
     @Override
-    public String generate(MarcoExecutor executor) {
-        return mGenerator.random();
-    }
-
-    @Override
     public String generate(String parameter) {
         if("".equals(parameter)) return generate();
 

@@ -13,7 +13,6 @@ import java.util.regex.Pattern;
 public class MarcoExecutor {
 
     static Logger log = LoggerFactory.getLogger(MarcoExecutor.class);
-    static String DEFAULT_RESULT = "";
 
     Pattern mMarcoPattern = Pattern.compile("(%[A-Z_]+)(\\[.[^\\]]*\\])?");
     Pattern mMarcoNamePattern = Pattern.compile("(%[A-Z_]+)");
@@ -30,10 +29,6 @@ public class MarcoExecutor {
         mMarcos.put("RND_DIGIT",new RandomChar(this,"[0-9]"));
         mMarcos.put("RND_CHAR",new RandomChar(this,"[0-9a-zA-Z]"));
         mMarcos.put("RND_NUMBER",new RandomNumber(this));
-//        mMarcos.put("RND_IP", new ExpressionMarco(this,"%RND_NUMBER[0-255].%RND_NUMBER[0-255].%RND_NUMBER[0-255].%RND_NUMBER[0-255]"));
-//        mMarcos.put("FIRST_NAME", new RandomList(this,"/marco/FIRST_NAME"));
-//  mMarcos.put("RND_FROM_DOMAIN", new RandomList(this,"/marco/RND_FROM_DOMAIN"));
-//        mMarcos.put("FROM_EMAIL", new RandomList(this,"/marco/FROM_EMAIL"));
 
     }
 

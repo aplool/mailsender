@@ -47,8 +47,5 @@ public class RandomList extends Marco {
         return generate();
     }
 
-    @Override
-    public String generate(MarcoExecutor executor) {
-        return null;
-    }
+
 }
