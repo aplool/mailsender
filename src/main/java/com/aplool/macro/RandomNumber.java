@@ -24,10 +24,6 @@ public class RandomNumber extends Marco {
         return DEFAULT_NUMBER;
     }
 
-    @Override
-    public String generate(MarcoExecutor executor) {
-        return DEFAULT_NUMBER;
-    }
 
     @Override
     public String generate(String parameter) {
