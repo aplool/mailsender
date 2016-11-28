@@ -1,6 +1,7 @@
 package com.aplool.mail.utils;
 
 import com.aplool.mail.model.MailAddress;
+import com.aplool.mail.model.MailHeaderConfig;
 import com.aplool.mail.model.MailHostConfig;
 import com.aplool.mail.model.MailItem;
 import org.apache.commons.mail.EmailConstants;
@@ -19,11 +20,14 @@ import static org.junit.Assert.assertEquals;
 public class MailAgentTest {
     private static final Logger mLogger = LoggerFactory.getLogger(MailAgentTest.class);
     private MailHostConfig mMailHostConfig = new MailHostConfig();
+    private MailHeaderConfig mMailHeaderConfig = null;
 
     @Before
     public void initData() {
         URL url = this.getClass().getClassLoader().getResource("mailHost.config");
         mMailHostConfig = new MailHostConfig(url.getPath());
+        url = this.getClass().getClassLoader().getResource("mailHeader.config");
+        mMailHeaderConfig = new MailHeaderConfig(url.getPath());
     }
 
     @Test
@@ -53,11 +57,11 @@ public class MailAgentTest {
         MailAgent mailAgent = new MailAgent(mMailHostConfig);
 
         MailItem mailItem = new MailItem();
-        MailAddress fromEmail = new MailAddress("EC@coretronic.com", "EC");
-        mailItem.from = fromEmail;
-        MailAddress toEmail = new MailAddress("leo.kao@coretronic.com", "Leo Kao");
-        mailItem.addTo(toEmail);
-        mailItem.subject = "TestMail 測試郵件";
+//        MailAddress fromEmail = new MailAddress("test@mail.com", "Test mailer");
+//        mailItem.from = fromEmail;
+//        MailAddress toEmail = new MailAddress("test@mail.com", "Test mailer");
+//        mailItem.addTo(toEmail);
+//        mailItem.subject = "TestMail 測試郵件";
 //        mailItem.contentType = EmailConstants.TEXT_HTML;
 //        mailItem.message = "Thsi is Test Mail 這是測試郵件";
 //        mailAgent.sendMail(mailItem);
