@@ -2,7 +2,6 @@ package com.aplool.macro;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -10,7 +9,6 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class RandomDateTime extends Marco {
 
-    Random rnd = new Random();
 
     public RandomDateTime(MarcoExecutor executor) {
         super(executor);

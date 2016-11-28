@@ -29,6 +29,7 @@ public class MarcoExecutor {
         mMarcos.put("RND_DIGIT",new RandomChar(this,"[0-9]"));
         mMarcos.put("RND_CHAR",new RandomChar(this,"[0-9a-zA-Z]"));
         mMarcos.put("RND_NUMBER",new RandomNumber(this));
+        mMarcos.put("RND_DATE_TIME",new RandomDateTime(this));
 
     }
 
