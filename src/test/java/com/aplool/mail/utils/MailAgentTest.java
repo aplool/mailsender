@@ -5,14 +5,14 @@ import com.aplool.mail.model.MailHeaderConfig;
 import com.aplool.mail.model.MailHostConfig;
 import com.aplool.mail.model.MailItem;
 import org.apache.commons.mail.EmailConstants;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
-
-import static org.junit.Assert.assertEquals;
+import java.util.List;
 
 /**
  * Created by leokao on 11/17/2016.
@@ -53,21 +53,28 @@ public class MailAgentTest {
 //                %MESSAGE_BODY
 //
 //                ----%BOUNDARY--
+        boolean sendResult = false;
+        try {
+            List<String> mailToList = MailAgent.loadMailToFromFile(this.getClass().getClassLoader().getResource("mailToList.txt").getPath().toString());
+            for (String mailToEmail : mailToList) {
+                MailAgent mailAgent = new MailAgent(mMailHostConfig);
+                mailAgent.setMailHeaderConfig(mMailHeaderConfig);
 
-        MailAgent mailAgent = new MailAgent(mMailHostConfig);
-
-        MailItem mailItem = new MailItem();
-//        MailAddress fromEmail = new MailAddress("test@mail.com", "Test mailer");
-//        mailItem.from = fromEmail;
-//        MailAddress toEmail = new MailAddress("test@mail.com", "Test mailer");
-//        mailItem.addTo(toEmail);
-//        mailItem.subject = "TestMail 測試郵件";
-//        mailItem.contentType = EmailConstants.TEXT_HTML;
-//        mailItem.message = "Thsi is Test Mail 這是測試郵件";
-//        mailAgent.sendMail(mailItem);
-        mailItem.contentType = EmailConstants.TEXT_HTML;
-        mailItem.message = "<h2>Thsi is Test Mail 這是測試郵件</h2>";
-        boolean sendResult = mailAgent.sendMail(mailItem);
-        assertEquals(true, sendResult);
+                MailItem mailItem = new MailItem();
+                MailAddress toEmail = new MailAddress(mailToEmail, mailToEmail);
+                mailItem.addTo(toEmail);
+                mailItem.contentType = EmailConstants.TEXT_HTML;
+                mailItem.message = mailAgent.loadMessageBodyFromFile(this.getClass().getClassLoader().getResource("mailBody.txt").getPath().toString());
+                mLogger.info("Mail to: {} , Message Body: {}", mailToEmail, mailItem.message);
+                try {
+                    sendResult = mailAgent.sendMail(mailItem);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            Assert.assertEquals(true, sendResult);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
