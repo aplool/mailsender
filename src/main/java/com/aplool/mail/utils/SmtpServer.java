@@ -1,6 +1,9 @@
 package com.aplool.mail.utils;
 
+import com.aplool.mail.model.MailAddress;
 import com.aplool.mail.model.MailHostConfig;
+import com.aplool.mail.model.MailItem;
+import org.apache.commons.mail.EmailConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,18 +35,25 @@ public class SmtpServer {
     }
 
     public boolean testReachable() {
-        boolean result = false;
         try {
             InetAddress inetAddress = InetAddress.getByName(mMailHostConfig.getHostAddress());
-            return result = inetAddress.isReachable(mTimeout);
+            return inetAddress.isReachable(mTimeout);
+
         } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
     }
 
-    public boolean checkSmtp(boolean debugFlag) {
-        return checkSmtpByIP(this.getServerIP(), debugFlag);
+    public boolean checkSmtp(boolean debugFlag, boolean testSend) {
+        boolean testResult = false;
+        if (this.testReachable()) {
+            testResult = checkSmtpByIP(this.getServerIP(), debugFlag);
+            if ((testResult) && (testSend)) {
+                testResult = testSendMail();
+            }
+        }
+        return testResult;
     }
 
     public boolean checkSmtpByIP(String serverIP, boolean debugFlag) {
@@ -57,10 +67,8 @@ public class SmtpServer {
             smtpTransport = smtpSession.getTransport();
             if (mMailHostConfig.isNeedAuth()) {
                 smtpTransport.connect(mMailHostConfig.getUserName(), mMailHostConfig.getUserPassword());
-                mLogger.info("SMTP Need Auth");
             } else {
                 smtpTransport.connect();
-                mLogger.info("SMTP NOT Need Auth");
             }
             isConnected = smtpTransport.isConnected();
             smtpTransport.close();
@@ -96,6 +104,22 @@ public class SmtpServer {
             e.printStackTrace();
         }
         return serverIP;
+    }
+
+    public boolean testSendMail() {
+        boolean sendResult = false;
+        MailAgent mailAgent = new MailAgent(mMailHostConfig);
+
+        MailItem mailItem = new MailItem();
+        MailAddress fromEmail = new MailAddress("admin@mail.com", "Mail Admin");
+        mailItem.from = fromEmail;
+        MailAddress toEmail = new MailAddress("admino@mail.com", "Mail Admin");
+        mailItem.addTo(toEmail);
+        mailItem.subject = "TestMail 測試郵件";
+        mailItem.contentType = EmailConstants.TEXT_HTML;
+        mailItem.message = "This is Test Mail 這是測試郵件";
+        sendResult = mailAgent.sendMail(mailItem);
+        return sendResult;
     }
 
     public int getTimeout() {

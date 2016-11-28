@@ -1,7 +1,10 @@
 package com.aplool.mail.utils;
 
+import com.aplool.macro.MarcoBuilder;
+import com.aplool.macro.MarcoExecutor;
 import com.aplool.mail.customize.MyMultiPartEmail;
 import com.aplool.mail.model.MailAddress;
+import com.aplool.mail.model.MailHeaderConfig;
 import com.aplool.mail.model.MailHostConfig;
 import com.aplool.mail.model.MailItem;
 import org.apache.commons.mail.DefaultAuthenticator;
@@ -10,9 +13,11 @@ import org.apache.commons.mail.EmailConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.*;
 
 
 /**
@@ -20,7 +25,9 @@ import java.util.Map;
  */
 public class MailAgent {
     private static final Logger mLogger = LoggerFactory.getLogger(MailAgent.class);
+    private static final boolean debugFlag = false;
     private MailHostConfig mMailHostConfig = null;
+    private MailHeaderConfig mMailHeaderConfig = null;
     public static final String MAIL_HEADER_MESSAGE_ID = "Message-ID";
     public static final String MAIL_HEADER_SEND_DATE = "Date";
     public static final String MAIL_HEADER_RECEIVED = "Received";
@@ -35,25 +42,30 @@ public class MailAgent {
     }
 
     public boolean sendMail(MailItem mailItem) {
-        boolean sendSuccess = false;
-        Email email = this.createEmail(mailItem);
-
         try {
-            email.send();
+            Email email = this.createEmail(mailItem);
+            String messageId = email.send();
+            mLogger.info("Send Mail Message Id: {} => Result: {}", messageId, true);
+            mailItem.to.forEach(mailTo -> mLogger.info("To User : {}  , Mail : {}", mailTo.mailUser, mailTo.mailAddress));
+            mailItem.cc.forEach(mailTo -> mLogger.info("CC User : {}  , Mail : {}", mailTo.mailUser, mailTo.mailAddress));
+            mailItem.bcc.forEach(mailTo -> mLogger.info("BCC User : {}  , Mail : {}", mailTo.mailUser, mailTo.mailAddress));
             return true;
-        }catch (Exception e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            mLogger.info("Send Mail Subject: {} => Result: {}", mailItem.subject, false);
+            if (debugFlag) {
+                e.printStackTrace();
+            }
             return false;
         }
     }
 
 
-    private Email createEmail(MailItem mailItem) {
+    private Email createEmail(MailItem mailItem) throws Exception {
         MyMultiPartEmail email = new MyMultiPartEmail();
 
         Map<String, String> mailHeaders = buildHeaders();
         email.setMessageId(mailHeaders.get(this.MAIL_HEADER_MESSAGE_ID));
-        mLogger.info(this.MAIL_HEADER_MESSAGE_ID + ":" + email.getMessageId());
+//        mLogger.info(this.MAIL_HEADER_MESSAGE_ID + ":" + email.getMessageId());
 
         email.setHeaders(mailHeaders);
         email.setCharset(EmailConstants.UTF_8);
@@ -64,8 +76,8 @@ public class MailAgent {
                 email.setAuthenticator(new DefaultAuthenticator(mMailHostConfig.getUserName(), mMailHostConfig.getUserPassword()));
             }
             email.setSSLOnConnect(mMailHostConfig.isNeedSSL());
-            email.setFrom(mailItem.from.mailAddress, mailItem.from.mailUser);
-            email.addReplyTo(mailItem.from.mailAddress, mailItem.from.mailUser);
+//            email.setFrom(mailItem.from.mailAddress, mailItem.from.mailUser);
+//            email.addReplyTo(mailItem.from.mailAddress, mailItem.from.mailUser);
             for (MailAddress mailAddr : mailItem.to) {
                 email.addTo(mailAddr.mailAddress, mailAddr.mailUser);
             }
@@ -75,44 +87,76 @@ public class MailAgent {
             for (MailAddress mailAddr : mailItem.bcc) {
                 email.addTo(mailAddr.mailAddress, mailAddr.mailUser);
             }
+            mailItem.subject = mailHeaders.get("Subject");
             email.setSubject(mailItem.subject);
             email.addPart(mailItem.message, mailItem.contentType + ";" + this.MAIL_HEADER_ENCODE);
         } catch (Exception e) {
-            e.getStackTrace();
-            mLogger.error("Error", e);
+            throw e;
         }
         return email;
     }
 
     private Map<String, String> buildHeaders() {
-        Map<String,String> mailHeaders = new HashMap<String, String>();
-        String sendDate = new Date().toString();
-        mailHeaders.put(this.MAIL_HEADER_RECEIVED, "from " + this.getFromIP() + " by " + this.getProxyIP() + "; " + sendDate);
-        mailHeaders.put(this.MAIL_HEADER_SEND_DATE, sendDate);
-        mailHeaders.put(this.MAIL_HEADER_MESSAGE_ID, this.genMessageId());
-        //mailHeaders.put(this.MAIL_HEADER_X_MAILER, "sendMail");
-        mailHeaders.put(this.MAIL_HEADER_X_PRIORITY, "3");
-        mailHeaders.put(this.MAIL_HEADER_X_MSMAIL_PRIORITY, "3");
+        MarcoExecutor executor = null;
+        Map<String, String> mailHeaders = new HashMap<String, String>();
+        try {
+            executor = new MarcoExecutor();
+            MarcoBuilder.build(executor, Paths.get(getClass().getResource("/marco").toURI()));
+
+            Enumeration e = mMailHeaderConfig.getHeaderProperties().propertyNames();
+
+            while (e.hasMoreElements()) {
+                String headerKey = (String) e.nextElement();
+                mailHeaders.put(headerKey, executor.executeMarco(mMailHeaderConfig.getHeaderProperties().getProperty(headerKey)));
+                mLogger.debug("{}:{}=>{}", new String[]{headerKey, mMailHeaderConfig.getHeaderProperties().getProperty(headerKey), executor.executeMarco(mMailHeaderConfig.getHeaderProperties().getProperty(headerKey))});
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+//        String sendDate = new Date().toString();
+//        mailHeaders.put(this.MAIL_HEADER_RECEIVED, "from " + this.getFromIP() + " by " + this.getProxyIP() + "; " + sendDate);
+//        mailHeaders.put(this.MAIL_HEADER_SEND_DATE, sendDate);
+//        mailHeaders.put(this.MAIL_HEADER_MESSAGE_ID, this.genMessageId());
+//        mailHeaders.put(this.MAIL_HEADER_X_MAILER, "sendMail");
+//        mailHeaders.put(this.MAIL_HEADER_X_PRIORITY, "3");
+//        mailHeaders.put(this.MAIL_HEADER_X_MSMAIL_PRIORITY, "3");
         return mailHeaders;
     }
 
-    private String getProxyIP() {
-        return "127.0.0.1";
+    public void setMailHeaderConfig(MailHeaderConfig mailHeaderConfig) {
+        mMailHeaderConfig = mailHeaderConfig;
     }
 
-    private String getFromIP() {
-        return "127.0.0.1";
+    public String loadMessageBodyFromFile(String filePath) throws IOException {
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(filePath));
+        try {
+            StringBuilder stringBuilder = new StringBuilder();
+            String line = bufferedReader.readLine();
+
+            while (line != null) {
+                stringBuilder.append(line);
+                stringBuilder.append("\n");
+                line = bufferedReader.readLine();
+            }
+            return stringBuilder.toString();
+        } finally {
+            bufferedReader.close();
+        }
     }
 
-    private String genMessageId() {
-        return "<" + this.getRandomUser() + this.getRandomDomain() + ">";
-    }
+    public static List<String> loadMailToFromFile(String filePath) throws IOException {
+        List<String> mailToList = new LinkedList<>();
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(filePath));
+        try {
+            String line = bufferedReader.readLine();
 
-    private String getRandomUser() {
-        return "longtai"+ Math.random();
-    }
-
-    private String getRandomDomain() {
-        return "coretronic.com";
+            while (line != null) {
+                mailToList.add(line);
+                line = bufferedReader.readLine();
+            }
+            return mailToList;
+        } finally {
+            bufferedReader.close();
+        }
     }
 }
