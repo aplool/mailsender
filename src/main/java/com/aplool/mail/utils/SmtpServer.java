@@ -1,6 +1,7 @@
 package com.aplool.mail.utils;
 
 import com.aplool.mail.model.MailAddress;
+import com.aplool.mail.model.MailHeaderConfig;
 import com.aplool.mail.model.MailHostConfig;
 import com.aplool.mail.model.MailItem;
 import org.apache.commons.mail.EmailConstants;
@@ -21,6 +22,7 @@ public class SmtpServer {
     private static final Logger mLogger = LoggerFactory.getLogger(SmtpServer.class);
 
     private MailHostConfig mMailHostConfig = new MailHostConfig();
+    private MailHeaderConfig mailHeaderConfig = null;
     private int mTimeout = 1000;
 
     public SmtpServer(String serverAddress) {
@@ -74,7 +76,7 @@ public class SmtpServer {
             smtpTransport.close();
             return isConnected;
         } catch (Exception e) {
-            e.printStackTrace();
+//            e.printStackTrace();
             return false;
         } finally {
             if (smtpTransport != null) {
@@ -109,6 +111,7 @@ public class SmtpServer {
     public boolean testSendMail() {
         boolean sendResult = false;
         MailAgent mailAgent = new MailAgent(mMailHostConfig);
+        mailAgent.setMailHeaderConfig(this.mailHeaderConfig);
 
         MailItem mailItem = new MailItem();
         MailAddress fromEmail = new MailAddress("admin@mail.com", "Mail Admin");
@@ -144,5 +147,9 @@ public class SmtpServer {
 
     public void setMailHostConfig(MailHostConfig mailHostConfig) {
         mMailHostConfig = mailHostConfig;
+    }
+
+    public void setMailHeaderConfig(MailHeaderConfig mailHeaderConfig) {
+        this.mailHeaderConfig = mailHeaderConfig;
     }
 }

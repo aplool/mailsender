@@ -1,5 +1,6 @@
 package com.aplool.mail.utils;
 
+import com.aplool.mail.model.MailHeaderConfig;
 import com.aplool.mail.model.MailHostConfig;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,13 +24,16 @@ public class SmtpServerTest {
         URL url = this.getClass().getClassLoader().getResource("mailHost.config");
         MailHostConfig mailHostConfig = new MailHostConfig(url.getPath());
         mSmtpServer = new SmtpServer(mailHostConfig);
+        url = this.getClass().getClassLoader().getResource("mailHeader.config");
+        MailHeaderConfig mailHeaderConfig = new MailHeaderConfig(url.getPath());
+        mSmtpServer.setMailHeaderConfig(mailHeaderConfig);
     }
 
     @Test
     public void testSmtpServer() {
-//        mLogger.info("{} isReachable {}", mSmtpServer.getServerIP() + "-" + mSmtpServer.getServerAddress(), mSmtpServer.testReachable());
-        mLogger.info("{} isConnectSMTP {}", mSmtpServer.getServerIP() + "-" + mSmtpServer.getServerAddress(), mSmtpServer.checkSmtp(false, true));
-        assertEquals(true, mSmtpServer.checkSmtp(false, true));
-//        mLogger.info("{} testSendMail {} ",  mSmtpServer.getServerIP() + "-" + mSmtpServer.getServerAddress(), mSmtpServer.testSendMail());
+        mLogger.info("{} isConnectSMTP {}", mSmtpServer.getServerIP() + "-" + mSmtpServer.getServerAddress(), mSmtpServer.testReachable());
+        Boolean testResult = mSmtpServer.checkSmtp(false, true);
+        mLogger.info("{} isConnectSMTP {}", mSmtpServer.getServerIP() + "-" + mSmtpServer.getServerAddress(), testResult);
+        assertEquals(true, testResult);
     }
 }
