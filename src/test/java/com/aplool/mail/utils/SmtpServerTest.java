@@ -29,7 +29,7 @@ public class SmtpServerTest {
         mSmtpServer.setMailHeaderConfig(mailHeaderConfig);
     }
 
-    @Test
+    //@Test
     public void testSmtpServer() {
         mLogger.info("{} isConnectSMTP {}", mSmtpServer.getServerIP() + "-" + mSmtpServer.getServerAddress(), mSmtpServer.testReachable());
         Boolean testResult = mSmtpServer.checkSmtp(false, true);

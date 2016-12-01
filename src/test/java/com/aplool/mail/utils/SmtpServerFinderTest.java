@@ -17,7 +17,7 @@ public class SmtpServerFinderTest {
         smtpServerFinder.setEndIpAddress("192.168.1.254");
     }
 
-    @Test
+    //@Test
     public void testRun() throws Exception {
         smtpServerFinder.startSearch();
     }
