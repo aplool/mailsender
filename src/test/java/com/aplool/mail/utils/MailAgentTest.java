@@ -59,6 +59,7 @@ public class MailAgentTest {
             for (String mailToEmail : mailToList) {
                 MailAgent mailAgent = new MailAgent(mMailHostConfig);
                 mailAgent.setMailHeaderConfig(mMailHeaderConfig);
+                mailAgent.setMarcoPath(this.getClass().getClassLoader().getResource("marco").getPath());
 
                 MailItem mailItem = new MailItem();
                 MailAddress toEmail = new MailAddress(mailToEmail, mailToEmail);

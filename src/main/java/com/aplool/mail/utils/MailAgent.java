@@ -16,6 +16,8 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
@@ -28,6 +30,7 @@ public class MailAgent {
     private static final boolean debugFlag = false;
     private MailHostConfig mMailHostConfig = null;
     private MailHeaderConfig mMailHeaderConfig = null;
+    private Path mMarcoPath = null;
     public static final String MAIL_HEADER_MESSAGE_ID = "Message-ID";
     public static final String MAIL_HEADER_SEND_DATE = "Date";
     public static final String MAIL_HEADER_RECEIVED = "Received";
@@ -39,6 +42,11 @@ public class MailAgent {
 
     public MailAgent(MailHostConfig mailHostConfig) {
         mMailHostConfig = mailHostConfig;
+//        try {
+////            this.mMarcoPath = Paths.get(this.getClass().getResource("/marco").toURI());
+//        } catch (URISyntaxException e) {
+//            e.printStackTrace();
+//        }
     }
 
     public boolean sendMail(MailItem mailItem) {
@@ -101,7 +109,7 @@ public class MailAgent {
         Map<String, String> mailHeaders = new HashMap<String, String>();
         try {
             executor = new MarcoExecutor();
-            MarcoBuilder.build(executor, Paths.get(getClass().getResource("/marco").toURI()));
+            MarcoBuilder.build(executor, mMarcoPath);
 
             Enumeration e = mMailHeaderConfig.getHeaderProperties().propertyNames();
 
@@ -158,5 +166,13 @@ public class MailAgent {
         } finally {
             bufferedReader.close();
         }
+    }
+
+    public Path getMarcoPath() {
+        return mMarcoPath;
+    }
+
+    public void setMarcoPath(String marcoPath) {
+        mMarcoPath = Paths.get(marcoPath);
     }
 }
