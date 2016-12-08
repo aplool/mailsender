@@ -27,7 +27,7 @@ import java.util.*;
  */
 public class MailAgent {
     private static final Logger mLogger = LoggerFactory.getLogger(MailAgent.class);
-    private static final boolean debugFlag = false;
+    private static final boolean debugFlag = true;
     private MailHostConfig mMailHostConfig = null;
     private MailHeaderConfig mMailHeaderConfig = null;
     private Path mMarcoPath = null;
@@ -74,7 +74,10 @@ public class MailAgent {
         Map<String, String> mailHeaders = buildHeaders();
         email.setMessageId(mailHeaders.get(this.MAIL_HEADER_MESSAGE_ID));
 //        mLogger.info(this.MAIL_HEADER_MESSAGE_ID + ":" + email.getMessageId());
-
+//        mailHeaders.put("Date", new Date().toString());
+        email.setFrom(mailHeaders.get("From"));
+//        mLogger.info("Header: {}" , mailHeaders.get("From"));
+//        mLogger.info("Header: {}" , mailHeaders);
         email.setHeaders(mailHeaders);
         email.setCharset(EmailConstants.UTF_8);
         try {
