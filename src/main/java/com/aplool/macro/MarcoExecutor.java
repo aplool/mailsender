@@ -20,10 +20,10 @@ public class MarcoExecutor {
 
     Hashtable<String, Marco> mMarcos = new Hashtable<String,Marco>();
 
-    public MarcoExecutor()throws Exception{
+    public MarcoExecutor(){
         initStandardMarco();
     }
-    private void initStandardMarco() throws Exception{
+    private void initStandardMarco() {
         mMarcos.put("RND_LC_CHAR",new RandomChar(this,"[a-z]"));
         mMarcos.put("RND_UC_CHAR",new RandomChar(this,"[A-Z]"));
         mMarcos.put("RND_DIGIT",new RandomChar(this,"[0-9]"));

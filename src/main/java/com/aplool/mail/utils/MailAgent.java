@@ -30,7 +30,7 @@ public class MailAgent {
     private static final boolean debugFlag = true;
     private MailHostConfig mMailHostConfig = null;
     private MailHeaderConfig mMailHeaderConfig = null;
-    private Path mMarcoPath = null;
+    private MarcoExecutor executor=null;
     public static final String MAIL_HEADER_MESSAGE_ID = "Message-ID";
     public static final String MAIL_HEADER_SEND_DATE = "Date";
     public static final String MAIL_HEADER_RECEIVED = "Received";
@@ -42,11 +42,6 @@ public class MailAgent {
 
     public MailAgent(MailHostConfig mailHostConfig) {
         mMailHostConfig = mailHostConfig;
-//        try {
-////            this.mMarcoPath = Paths.get(this.getClass().getResource("/marco").toURI());
-//        } catch (URISyntaxException e) {
-//            e.printStackTrace();
-//        }
     }
 
     public boolean sendMail(MailItem mailItem) {
@@ -108,17 +103,15 @@ public class MailAgent {
     }
 
     private Map<String, String> buildHeaders() {
-        MarcoExecutor executor = null;
+
         Map<String, String> mailHeaders = new HashMap<String, String>();
         try {
-            executor = new MarcoExecutor();
-            MarcoBuilder.build(executor, mMarcoPath);
 
             Enumeration e = mMailHeaderConfig.getHeaderProperties().propertyNames();
 
             while (e.hasMoreElements()) {
                 String headerKey = (String) e.nextElement();
-                String value = executor.execute(mMailHeaderConfig.getHeaderProperties().getProperty(headerKey));
+                String value = this.executor.execute(mMailHeaderConfig.getHeaderProperties().getProperty(headerKey));
                 mailHeaders.put(headerKey, value);
                 //mLogger.debug("{}:{}=>{}", new String[]{headerKey, mMailHeaderConfig.getHeaderProperties().getProperty(headerKey), executor.executeMarco(mMailHeaderConfig.getHeaderProperties().getProperty(headerKey))});
             }
@@ -135,6 +128,7 @@ public class MailAgent {
         return mailHeaders;
     }
 
+    public void setMacroExecutor(MarcoExecutor executor){ this.executor = executor;}
     public void setMailHeaderConfig(MailHeaderConfig mailHeaderConfig) {
         mMailHeaderConfig = mailHeaderConfig;
     }
@@ -170,13 +164,5 @@ public class MailAgent {
         } finally {
             bufferedReader.close();
         }
-    }
-
-    public Path getMarcoPath() {
-        return mMarcoPath;
-    }
-
-    public void setMarcoPath(String marcoPath) {
-        mMarcoPath = Paths.get(marcoPath);
     }
 }
