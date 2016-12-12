@@ -118,8 +118,9 @@ public class MailAgent {
 
             while (e.hasMoreElements()) {
                 String headerKey = (String) e.nextElement();
-                mailHeaders.put(headerKey, executor.executeMarco(mMailHeaderConfig.getHeaderProperties().getProperty(headerKey)));
-                mLogger.debug("{}:{}=>{}", new String[]{headerKey, mMailHeaderConfig.getHeaderProperties().getProperty(headerKey), executor.executeMarco(mMailHeaderConfig.getHeaderProperties().getProperty(headerKey))});
+                String value = executor.execute(mMailHeaderConfig.getHeaderProperties().getProperty(headerKey));
+                mailHeaders.put(headerKey, value);
+                //mLogger.debug("{}:{}=>{}", new String[]{headerKey, mMailHeaderConfig.getHeaderProperties().getProperty(headerKey), executor.executeMarco(mMailHeaderConfig.getHeaderProperties().getProperty(headerKey))});
             }
         } catch (Exception e) {
             e.printStackTrace();

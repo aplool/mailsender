@@ -22,6 +22,7 @@ public class RandomDateTime extends Marco {
 
     @Override
     public String generate(String parameter) {
+        if("".equals(parameter.trim())) return generate();
         SimpleDateFormat spf = new SimpleDateFormat(parameter);
         Date date = randomDate();
         return spf.format(date);
