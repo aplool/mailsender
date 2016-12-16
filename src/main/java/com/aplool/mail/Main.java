@@ -7,6 +7,7 @@ import com.aplool.mail.model.MailHeaderConfig;
 import com.aplool.mail.model.MailHostConfig;
 import com.aplool.mail.model.MailItem;
 import com.aplool.mail.utils.MailAgent;
+import com.aplool.mail.utils.MailHostListFile;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import org.apache.commons.mail.EmailConstants;
@@ -15,10 +16,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.stream.Stream;
 
 /**
@@ -27,27 +26,49 @@ import java.util.stream.Stream;
 public class Main {
     static Logger log = LoggerFactory.getLogger(Main.class);
 
-    MailHostConfig mailHostConfig;
+    MailHostConfig mailHostConfig = null;
     MailHeaderConfig mailHeaderConfig;
     String mailListFilename;
     String messageBody;
-    MailAgent mailAgent;
+    MailAgent mailAgent = null;
     MarcoExecutor executor;
+    MailHostListFile mailHostListFile;
     EventBus mailBus = new EventBus();
 
     public Main(String defaultPath) {
         initMarcoExecutor(defaultPath);
         String configPath = new File(defaultPath + "/mailHost.config").getAbsolutePath();
-        mailHostConfig = new MailHostConfig(configPath);
+//        mailHostConfig = new MailHostConfig(configPath);
+        initMailHostIPList(defaultPath);
+        getNextMailHostConfig();
         configPath = new File(defaultPath + "/mailHeader.config").getAbsolutePath();
         mailHeaderConfig = new MailHeaderConfig(configPath);
         mailListFilename = new File(defaultPath + "/mailToList.txt").getAbsolutePath();
-        mailAgent = new MailAgent(mailHostConfig);
-        mailAgent.setMailHeaderConfig(mailHeaderConfig);
-        mailAgent.setMacroExecutor(this.executor);
+        initMailAgent();
         messageBody = new File(defaultPath + "/mailBody.txt").getAbsolutePath();
 
         mailBus.register(new EventBusSendMail());
+    }
+
+    private void initMailAgent() {
+        if (mailHostConfig != null) {
+            mailAgent = new MailAgent(mailHostConfig);
+            mailAgent.setMailHeaderConfig(mailHeaderConfig);
+            mailAgent.setMacroExecutor(this.executor);
+        } else {
+            mailAgent = null;
+        }
+    }
+
+    private void getNextMailHostConfig() {
+        String mailHostIP = mailHostListFile.getNewHostIP();
+        if (mailHostIP != "") {
+            mailHostConfig = new MailHostConfig();
+            mailHostConfig.setHostAddress(mailHostIP);
+            log.info(mailHostIP);
+        } else {
+            mailHostConfig = null;
+        }
     }
 
     private void initMarcoExecutor(String defaultPath){
@@ -58,6 +79,11 @@ public class Main {
             log.error("MarcoExecutor add Extend Marcos Error.", e);
         }
     }
+
+    private void initMailHostIPList(String defaultPath){
+        mailHostListFile = new MailHostListFile(defaultPath);
+    }
+
     public void start(){
         sendMailWithEmailList(mailListFilename);
     }
@@ -75,14 +101,21 @@ public class Main {
         @Subscribe
         public void recordCustomerChange(String email) {
             try {
-                MailItem mailItem = new MailItem();
-                MailAddress toEmail = new MailAddress(email, email);
-                mailItem.addTo(toEmail);
-                mailItem.contentType = EmailConstants.TEXT_HTML;
-                mailItem.message = mailAgent.loadMessageBodyFromFile(messageBody);
-                Boolean sendResult = mailAgent.sendMail(mailItem);
-                System.out.println("Mail to: " + email + ", Message Body: " + mailItem.message + " => " + sendResult.toString());
-
+                if (mailAgent != null) {
+                    MailItem mailItem = new MailItem();
+                    MailAddress toEmail = new MailAddress(email, email);
+                    mailItem.addTo(toEmail);
+                    mailItem.contentType = EmailConstants.TEXT_HTML;
+                    mailItem.message = mailAgent.loadMessageBodyFromFile(messageBody);
+                    Boolean sendResult = mailAgent.sendMail(mailItem);
+                    System.out.println("Mail to: " + email + ", Message Body: " + mailItem.message + " => " + sendResult.toString());
+                    if (!sendResult) {
+                        getNextMailHostConfig();
+                        initMailAgent();
+                    }
+                } else {
+                    System.out.println("Mail to: " + email + ", without Mail Host !");
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -95,7 +128,5 @@ public class Main {
 
         Main main = new Main(args[0]);
         main.start();
-
-
     }
 }
