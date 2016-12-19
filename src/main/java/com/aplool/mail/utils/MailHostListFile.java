@@ -1,11 +1,16 @@
 package com.aplool.mail.utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.*;
 
 /**
  * Created by leokao on 12/16/2016.
  */
 public class MailHostListFile {
+    private static final Logger log = LoggerFactory.getLogger(MailHostListFile.class);
+
     String filePath = "";
     String hostIPListFile = "mailHostList.txt";
 
@@ -48,7 +53,16 @@ public class MailHostListFile {
             if (tempFile != null) {
                 tempFile.exists();
             }
+            log.debug("newIP: {}",resultIP);
             return resultIP;
         }
+    }
+
+    public String getNextReachableHost() {
+        String newIP = getNewHostIP();
+        while ((newIP!= "") && (!SmtpServer.isReachable(newIP))) {
+            newIP = getNewHostIP();
+        }
+        return newIP;
     }
 }

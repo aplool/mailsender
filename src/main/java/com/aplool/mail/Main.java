@@ -61,7 +61,7 @@ public class Main {
     }
 
     private void getNextMailHostConfig() {
-        String mailHostIP = mailHostListFile.getNewHostIP();
+        String mailHostIP = mailHostListFile.getNextReachableHost();
         if (mailHostIP != "") {
             mailHostConfig = new MailHostConfig();
             mailHostConfig.setHostAddress(mailHostIP);
