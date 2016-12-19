@@ -9,8 +9,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.mail.MessagingException;
+import javax.mail.NoSuchProviderException;
 import javax.mail.Session;
 import javax.mail.Transport;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Properties;
@@ -19,7 +21,7 @@ import java.util.Properties;
  * Created by leokao on 11/22/2016.
  */
 public class SmtpServer {
-    private static final Logger mLogger = LoggerFactory.getLogger(SmtpServer.class);
+    private static final Logger log = LoggerFactory.getLogger(SmtpServer.class);
 
     private MailHostConfig mMailHostConfig = new MailHostConfig();
     private MailHeaderConfig mailHeaderConfig = null;
@@ -36,6 +38,47 @@ public class SmtpServer {
         mTimeout = 1000;
     }
 
+    public static boolean isReachable(String ip){
+        boolean result = false;
+
+        InetAddress inetAddress = null;
+        try {
+            inetAddress = InetAddress.getByName(ip);
+            result = inetAddress.isReachable(100);
+        } catch (UnknownHostException e) {
+            log.error("IP {} is unkownHost.", ip);
+        } catch (IOException e) {
+            log.error("IP {} is io Error",ip);
+        }
+        return result;
+    }
+    public static boolean isMailRelayable(String ip){
+        boolean result = false;
+        Transport smtpTransport = null;
+        Properties props = new Properties();
+        props.setProperty("mail.smtp.host", ip);
+        props.setProperty("mail.debug", "false");
+        Session smtpSession = Session.getInstance(props);
+        try {
+            smtpTransport = smtpSession.getTransport();
+            smtpTransport.connect();
+            result = smtpTransport.isConnected();
+            smtpTransport.close();
+        } catch (NoSuchProviderException e) {
+            log.error("IP {} is not Mail Relay", ip);
+        } catch (MessagingException e) {
+            log.error("IP {} is not Mail Relay", ip);
+        } finally {
+            if (smtpTransport != null) {
+                try {
+                    smtpTransport.close();
+                } catch (MessagingException e) {
+
+                }
+            }
+        }
+        return result;
+    }
     public boolean testReachable() {
         try {
             InetAddress inetAddress = InetAddress.getByName(mMailHostConfig.getHostAddress());

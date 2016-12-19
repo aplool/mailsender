@@ -22,7 +22,8 @@ public class RandomDateTimeTest {
     public void testRandomDateTime() throws Exception{
 
         Marco RND_DATE_TIME = new RandomDateTime(null);
-        log.info("RND_DATE_TIME : {}", RND_DATE_TIME.generate());
+        log.debug("RND_DATE_TIME : {}", RND_DATE_TIME.generate());
+        log.info("RND_DATE_TIME : {}", RND_DATE_TIME.generate(""));
         log.info("RND_DATE_TIME(yyyy/MM/dd) : {}", RND_DATE_TIME.generate("yyyy/MM/dd"));
 
     }

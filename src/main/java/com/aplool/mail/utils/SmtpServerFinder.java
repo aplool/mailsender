@@ -10,17 +10,17 @@ import java.net.URL;
  * Created by leokao on 11/29/2016.
  */
 public class SmtpServerFinder {
-    private static final Logger mLogger = LoggerFactory.getLogger(SmtpServerFinder.class);
-    private IpAddress startIpAddress = new IpAddress("1.0.0.1");
-    private IpAddress endIpAddress = new IpAddress("1.0.0.2");
+            private static final Logger mLogger = LoggerFactory.getLogger(SmtpServerFinder.class);
+            private IpAddress startIpAddress = new IpAddress("1.0.0.1");
+            private IpAddress endIpAddress = new IpAddress("1.0.0.2");
 
-    public void startSearch() {
-        URL url = this.getClass().getClassLoader().getResource("mailHeader.config");
-        MailHeaderConfig mailHeaderConfig = new MailHeaderConfig(url.getPath());
-        IpAddress curIpAddress = startIpAddress;
-        while (!curIpAddress.equals(endIpAddress.nextServerIP())) {
-            SmtpServer smtpServer = new SmtpServer(curIpAddress.toString());
-            smtpServer.setMailHeaderConfig(mailHeaderConfig);
+        public void startSearch() {
+            URL url = this.getClass().getClassLoader().getResource("mailHeader.config");
+            MailHeaderConfig mailHeaderConfig = new MailHeaderConfig(url.getPath());
+            IpAddress curIpAddress = startIpAddress;
+            while (!curIpAddress.equals(endIpAddress.nextServerIP())) {
+                SmtpServer smtpServer = new SmtpServer(curIpAddress.toString());
+                smtpServer.setMailHeaderConfig(mailHeaderConfig);
             boolean testSmtp = smtpServer.testReachable();
             if (testSmtp) {
                 mLogger.info("{} => Reachable: {}", curIpAddress.toString(), testSmtp);
