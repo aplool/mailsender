@@ -4,6 +4,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Created by leokao on 12/16/2016.
@@ -13,56 +19,45 @@ public class MailHostListFile {
 
     String filePath = "";
     String hostIPListFile = "mailHostList.txt";
+    int mailserverIndex =0;
+    List<String> ips = null;
 
     public MailHostListFile(String filePath) {
         this.filePath = filePath;
+        initMailServerList();
+    }
+
+    private void initMailServerList(){
+        Path file = Paths.get(filePath + "/" + hostIPListFile);
+
+        try {
+            ips = Files.lines(file, Charset.defaultCharset())
+                .filter(line -> !line.isEmpty())
+                .collect(Collectors.toList());
+            mailserverIndex =0;
+            log.debug("MailServerList with {} ips", ips.size());
+        } catch (IOException e) {
+            log.error("MailServerList File : {} is initial error.", file.toUri().getPath());
+            log.error("MailList init Error",e.getCause());
+            ips = null;
+        }
     }
 
     public String getNewHostIP() {
-        String resultIP = "";
-        File inputFile = null;
-        File tempFile = null;
-        try {
-            inputFile = new File(filePath + "/" + hostIPListFile);
-            tempFile = new File(filePath + "/" + hostIPListFile + ".tmp");
-
-            BufferedReader reader = new BufferedReader(new FileReader(inputFile));
-            BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
-
-            String currentLine;
-
-            while ((currentLine = reader.readLine()) != null) {
-                // trim newline when comparing with lineToRemove
-                String trimmedLine = currentLine.trim();
-                if (resultIP.equals(""))  {
-                    resultIP = trimmedLine;
-                    continue;
-                }
-                writer.write(currentLine + System.getProperty("line.separator"));
-            }
-            writer.close();
-            reader.close();
-            tempFile.renameTo(inputFile);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        finally {
-            if (inputFile != null) {
-                inputFile.exists();
-            }
-            if (tempFile != null) {
-                tempFile.exists();
-            }
-            log.debug("newIP: {}",resultIP);
-            return resultIP;
-        }
+        String result = "";
+        if(ips == null) return result;
+        if(mailserverIndex>=ips.size()) return result;
+        result = ips.get(mailserverIndex);
+        mailserverIndex ++;
+        return result;
     }
 
     public String getNextReachableHost() {
-        String newIP = getNewHostIP();
-        while ((newIP!= "") && (!SmtpServer.isReachable(newIP))) {
-            newIP = getNewHostIP();
+        String newIP="";
+        while((newIP = getNewHostIP()) !=""){
+            if(SmtpServer.isMailRelayable(newIP)) break;
         }
+
         return newIP;
     }
 }

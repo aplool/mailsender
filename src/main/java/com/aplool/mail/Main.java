@@ -50,6 +50,7 @@ public class Main {
         mailBus.register(new EventBusSendMail());
     }
 
+
     private void initMailAgent() {
         if (mailHostConfig != null) {
             mailAgent = new MailAgent(mailHostConfig);
@@ -108,23 +109,25 @@ public class Main {
                     mailItem.contentType = EmailConstants.TEXT_HTML;
                     mailItem.message = mailAgent.loadMessageBodyFromFile(messageBody);
                     Boolean sendResult = mailAgent.sendMail(mailItem);
-                    System.out.println("Mail to: " + email + ", Message Body: " + mailItem.message + " => " + sendResult.toString());
+                    log.info("Mail to: {}, Message Body: {} => {}"  ,email,mailItem.message,sendResult.toString());
                     if (!sendResult) {
                         getNextMailHostConfig();
                         initMailAgent();
                     }
                 } else {
-                    System.out.println("Mail to: " + email + ", without Mail Host !");
+                    log.info("Mail Fail : Send to {} without Mail Host !", email);
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error("Load Message From File Error", e.getCause());
+            } catch (Exception e){
+                log.error("Email Error ", e.getCause());
             }
 
         }
     }
 
     public static void main(String[] args) {
-        System.out.println("Mail Send Start :");
+        log.info("Mail Send Start :");
 
         Main main = new Main(args[0]);
         main.start();
