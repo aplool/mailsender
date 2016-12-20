@@ -25,7 +25,7 @@ public class MailHeaderConfig {
 
                     while (e.hasMoreElements()) {
                         String headerKey = (String) e.nextElement();
-                        mLogger.info("{}:{}", new String[]{headerKey, this.getHeaderProperties().getProperty(headerKey)});
+                        mLogger.info("{}:{}", headerKey, this.getHeaderProperties().getProperty(headerKey));
                     }
                 }
         } catch (Exception e) {
