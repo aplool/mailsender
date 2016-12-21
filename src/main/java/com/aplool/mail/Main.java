@@ -7,6 +7,7 @@ import com.aplool.mail.model.MailHeaderConfig;
 import com.aplool.mail.model.MailHostConfig;
 import com.aplool.mail.model.MailItem;
 import com.aplool.mail.utils.MailAgent;
+import com.aplool.mail.utils.MailAgentManager;
 import com.aplool.mail.utils.MailHostListFile;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -33,22 +34,31 @@ public class Main {
     MailAgent mailAgent = null;
     MarcoExecutor executor;
     MailHostListFile mailHostListFile;
+    MailAgentManager mailAgentManager;
     EventBus mailBus = new EventBus();
 
     public Main(String defaultPath) {
         initMarcoExecutor(defaultPath);
+        intiMailAgentManager(defaultPath);
         String configPath = new File(defaultPath + "/mailHost.config").getAbsolutePath();
-        initMailHostIPList(defaultPath);
-        getNextMailHostConfig();
-        configPath = new File(defaultPath + "/mailHeader.config").getAbsolutePath();
-        mailHeaderConfig = new MailHeaderConfig(configPath);
+
         mailListFilename = new File(defaultPath + "/mailToList.txt").getAbsolutePath();
-        initMailAgent();
+
         initMessageBody(defaultPath + "/mailBody.txt");
 
         mailBus.register(new EventBusSendMail());
     }
 
+    private void intiMailAgentManager(String defaultPath) throws RuntimeException{
+
+        mailHostListFile = new MailHostListFile(Paths.get(defaultPath,"mailHostList.txt").toUri().getPath());
+        mailHeaderConfig = new MailHeaderConfig(Paths.get(defaultPath,"mailHeader.config").toUri().getPath());
+        mailAgentManager = new MailAgentManager(this.executor);
+        mailAgentManager.setMailHeaders(mailHeaderConfig);
+        mailAgentManager.setMailServers(mailHostListFile);
+        mailAgent = mailAgentManager.build();
+        if(mailAgent == null) throw new RuntimeException("No available Mail Server.");
+    }
     private void initMessageBody(String filename){
         try {
             byte[] content = Files.readAllBytes(Paths.get(filename));
@@ -57,25 +67,7 @@ public class Main {
             log.error("Message Body init error with : {}", filename);
         }
     }
-    private void initMailAgent() {
-        if (mailHostConfig != null) {
-            mailAgent = new MailAgent(mailHostConfig);
-            mailAgent.setMailHeaderConfig(mailHeaderConfig);
-            mailAgent.setMacroExecutor(this.executor);
-        } else {
-            mailAgent = null;
-        }
-    }
 
-    private void getNextMailHostConfig() {
-        String mailHostIP = mailHostListFile.getNextReachableHost();
-        if (mailHostIP != "") {
-            mailHostConfig = new MailHostConfig();
-            mailHostConfig.setHostAddress(mailHostIP);
-        } else {
-            mailHostConfig = null;
-        }
-    }
 
     private void initMarcoExecutor(String defaultPath){
         this.executor = new MarcoExecutor();
@@ -86,17 +78,15 @@ public class Main {
         }
     }
 
-    private void initMailHostIPList(String defaultPath){
-        mailHostListFile = new MailHostListFile(defaultPath);
-    }
-
     public void start(){
         sendMailWithEmailList(mailListFilename);
     }
     private void sendMailWithEmailList(String fileName){
         try (Stream<String> stream = Files.lines(Paths.get(fileName))) {
 
-            stream.forEach((v)->mailBus.post(v));
+            stream.forEach((v)->{
+                mailBus.post(v);
+            });
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -106,7 +96,9 @@ public class Main {
     class EventBusSendMail {
         @Subscribe
         public void recordCustomerChange(String email) {
+
             try {
+
                 if (mailAgent != null) {
                     MailItem mailItem = new MailItem();
                     MailAddress toEmail = new MailAddress(email, email);
@@ -116,14 +108,14 @@ public class Main {
                     Boolean sendResult = mailAgent.sendMail(mailItem);
                     log.info("Mail to: {}, Message Body: {} => {}"  ,email,mailItem.message,sendResult.toString());
                     if (!sendResult) {
-                        getNextMailHostConfig();
-                        initMailAgent();
+                        mailAgent = mailAgentManager.build();
                     }
                 } else {
                     log.info("Mail Fail : Send to {} without Mail Host !", email);
                 }
             } catch (Exception e){
-                log.error("Email Error ", e.getCause());
+                log.info("Mail Fail : Send to {} without Mail Host !", email);
+                log.error("Mail Fail",e.getCause());
             }
 
         }

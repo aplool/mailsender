@@ -18,7 +18,6 @@ public class MailHostListFile {
     private static final Logger log = LoggerFactory.getLogger(MailHostListFile.class);
 
     String filePath = "";
-    String hostIPListFile = "mailHostList.txt";
     int mailserverIndex =0;
     List<String> ips = null;
 
@@ -28,7 +27,7 @@ public class MailHostListFile {
     }
 
     private void initMailServerList(){
-        Path file = Paths.get(filePath + "/" + hostIPListFile);
+        Path file = Paths.get(filePath);
 
         try {
             ips = Files.lines(file, Charset.defaultCharset())
