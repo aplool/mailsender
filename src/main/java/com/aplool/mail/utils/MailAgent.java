@@ -1,13 +1,11 @@
 package com.aplool.mail.utils;
 
-import com.aplool.macro.MarcoBuilder;
 import com.aplool.macro.MarcoExecutor;
 import com.aplool.mail.customize.MyMultiPartEmail;
 import com.aplool.mail.model.MailAddress;
 import com.aplool.mail.model.MailHeaderConfig;
 import com.aplool.mail.model.MailHostConfig;
 import com.aplool.mail.model.MailItem;
-import org.apache.commons.mail.DefaultAuthenticator;
 import org.apache.commons.mail.Email;
 import org.apache.commons.mail.EmailConstants;
 import org.slf4j.Logger;
@@ -16,9 +14,6 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 
 
@@ -32,6 +27,7 @@ public class MailAgent {
     private MailHeaderConfig mMailHeaderConfig = null;
     private MarcoExecutor executor=null;
     public static final String MAIL_HEADER_MESSAGE_ID = "Message-ID";
+    public static final String MAIL_HEADER_FROM = "From";
     public static final String MAIL_HEADER_SEND_DATE = "Date";
     public static final String MAIL_HEADER_RECEIVED = "Received";
     public static final String MAIL_HEADER_X_MAILER = "X-Mailer";
@@ -49,9 +45,6 @@ public class MailAgent {
             Email email = this.createEmail(mailItem);
             String messageId = email.send();
             mLogger.info("Send Mail Message Id: {} => Result: {}", messageId, true);
-            mailItem.to.forEach(mailTo -> mLogger.info("To User : {}  , Mail : {}", mailTo.mailUser, mailTo.mailAddress));
-            mailItem.cc.forEach(mailTo -> mLogger.info("CC User : {}  , Mail : {}", mailTo.mailUser, mailTo.mailAddress));
-            mailItem.bcc.forEach(mailTo -> mLogger.info("BCC User : {}  , Mail : {}", mailTo.mailUser, mailTo.mailAddress));
             return true;
         } catch (Exception e) {
             mLogger.info("Send Mail Subject: {} => Result: {}", mailItem.subject, false);
@@ -67,23 +60,16 @@ public class MailAgent {
         MyMultiPartEmail email = new MyMultiPartEmail();
 
         Map<String, String> mailHeaders = buildHeaders();
-        email.setMessageId(mailHeaders.get(this.MAIL_HEADER_MESSAGE_ID));
-//        mLogger.info(this.MAIL_HEADER_MESSAGE_ID + ":" + email.getMessageId());
-//        mailHeaders.put("Date", new Date().toString());
-        email.setFrom(mailHeaders.get("From"));
-//        mLogger.info("Header: {}" , mailHeaders.get("From"));
-//        mLogger.info("Header: {}" , mailHeaders);
+        email.setMessageId(mailHeaders.get(MAIL_HEADER_MESSAGE_ID));
+        email.setFrom(mailHeaders.get(MAIL_HEADER_FROM));
         email.setHeaders(mailHeaders);
         email.setCharset(EmailConstants.UTF_8);
         try {
             email.setHostName(mMailHostConfig.getHostAddress());
             email.setSmtpPort(mMailHostConfig.getHostPort());
-            if (mMailHostConfig.isNeedAuth()) {
-                email.setAuthenticator(new DefaultAuthenticator(mMailHostConfig.getUserName(), mMailHostConfig.getUserPassword()));
-            }
+            email.setAuthenticator(mMailHostConfig.getAuthenticator());
             email.setSSLOnConnect(mMailHostConfig.isNeedSSL());
-//            email.setFrom(mailItem.from.mailAddress, mailItem.from.mailUser);
-//            email.addReplyTo(mailItem.from.mailAddress, mailItem.from.mailUser);
+
             for (MailAddress mailAddr : mailItem.to) {
                 email.addTo(mailAddr.mailAddress, mailAddr.mailUser);
             }
@@ -118,13 +104,7 @@ public class MailAgent {
         } catch (Exception e) {
             e.printStackTrace();
         }
-//        String sendDate = new Date().toString();
-//        mailHeaders.put(this.MAIL_HEADER_RECEIVED, "from " + this.getFromIP() + " by " + this.getProxyIP() + "; " + sendDate);
-//        mailHeaders.put(this.MAIL_HEADER_SEND_DATE, sendDate);
-//        mailHeaders.put(this.MAIL_HEADER_MESSAGE_ID, this.genMessageId());
-//        mailHeaders.put(this.MAIL_HEADER_X_MAILER, "sendMail");
-//        mailHeaders.put(this.MAIL_HEADER_X_PRIORITY, "3");
-//        mailHeaders.put(this.MAIL_HEADER_X_MSMAIL_PRIORITY, "3");
+
         return mailHeaders;
     }
 

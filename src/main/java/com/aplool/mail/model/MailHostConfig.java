@@ -1,5 +1,8 @@
 package com.aplool.mail.model;
 
+import org.apache.commons.mail.DefaultAuthenticator;
+
+import javax.mail.Authenticator;
 import java.io.*;
 import java.util.Properties;
 
@@ -110,5 +113,11 @@ public class MailHostConfig {
 
     public void setNeedSSL(boolean needSSL) {
         mHostProperties.setProperty("needSSL",Boolean.toString(needSSL));
+    }
+
+    public Authenticator getAuthenticator(){
+        if(!this.isNeedAuth()) return null;
+        return new DefaultAuthenticator(this.getUserName(), this.getUserPassword());
+
     }
 }

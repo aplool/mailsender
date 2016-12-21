@@ -11,7 +11,7 @@ import java.util.Properties;
  * Created by leokao on 11/18/2016.
  */
 public class MailHeaderConfig {
-    private static final Logger mLogger = LoggerFactory.getLogger(MailHeaderConfig.class);
+    private static final Logger log = LoggerFactory.getLogger(MailHeaderConfig.class);
     private Properties mHeaderProperties = new Properties();
     public boolean debugFlag = false;
 
@@ -25,7 +25,7 @@ public class MailHeaderConfig {
 
                     while (e.hasMoreElements()) {
                         String headerKey = (String) e.nextElement();
-                        mLogger.info("{}:{}", headerKey, this.getHeaderProperties().getProperty(headerKey));
+                        log.debug("{}:{}", headerKey, this.getHeaderProperties().getProperty(headerKey));
                     }
                 }
         } catch (Exception e) {

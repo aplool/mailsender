@@ -38,19 +38,25 @@ public class Main {
     public Main(String defaultPath) {
         initMarcoExecutor(defaultPath);
         String configPath = new File(defaultPath + "/mailHost.config").getAbsolutePath();
-//        mailHostConfig = new MailHostConfig(configPath);
         initMailHostIPList(defaultPath);
         getNextMailHostConfig();
         configPath = new File(defaultPath + "/mailHeader.config").getAbsolutePath();
         mailHeaderConfig = new MailHeaderConfig(configPath);
         mailListFilename = new File(defaultPath + "/mailToList.txt").getAbsolutePath();
         initMailAgent();
-        messageBody = new File(defaultPath + "/mailBody.txt").getAbsolutePath();
+        initMessageBody(defaultPath + "/mailBody.txt");
 
         mailBus.register(new EventBusSendMail());
     }
 
-
+    private void initMessageBody(String filename){
+        try {
+            byte[] content = Files.readAllBytes(Paths.get(filename));
+            messageBody = new String(content);
+        } catch (IOException e) {
+            log.error("Message Body init error with : {}", filename);
+        }
+    }
     private void initMailAgent() {
         if (mailHostConfig != null) {
             mailAgent = new MailAgent(mailHostConfig);
@@ -66,7 +72,6 @@ public class Main {
         if (mailHostIP != "") {
             mailHostConfig = new MailHostConfig();
             mailHostConfig.setHostAddress(mailHostIP);
-            log.info(mailHostIP);
         } else {
             mailHostConfig = null;
         }
@@ -107,7 +112,7 @@ public class Main {
                     MailAddress toEmail = new MailAddress(email, email);
                     mailItem.addTo(toEmail);
                     mailItem.contentType = EmailConstants.TEXT_HTML;
-                    mailItem.message = mailAgent.loadMessageBodyFromFile(messageBody);
+                    mailItem.message = messageBody;
                     Boolean sendResult = mailAgent.sendMail(mailItem);
                     log.info("Mail to: {}, Message Body: {} => {}"  ,email,mailItem.message,sendResult.toString());
                     if (!sendResult) {
@@ -117,8 +122,6 @@ public class Main {
                 } else {
                     log.info("Mail Fail : Send to {} without Mail Host !", email);
                 }
-            } catch (IOException e) {
-                log.error("Load Message From File Error", e.getCause());
             } catch (Exception e){
                 log.error("Email Error ", e.getCause());
             }

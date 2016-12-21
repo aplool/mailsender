@@ -59,7 +59,7 @@ public class SmtpServer {
         Transport smtpTransport = null;
         Properties props = new Properties();
         props.setProperty("mail.smtp.host", ip);
-        props.setProperty("mail.debug", "false");
+        props.setProperty("mail.debug", "true");
         Session smtpSession = Session.getInstance(props);
         try {
             smtpTransport = smtpSession.getTransport();
