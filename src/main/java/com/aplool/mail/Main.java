@@ -40,19 +40,19 @@ public class Main {
     public Main(String defaultPath) {
         initMarcoExecutor(defaultPath);
         intiMailAgentManager(defaultPath);
-        String configPath = new File(defaultPath + "/mailHost.config").getAbsolutePath();
+        String configPath = new File(defaultPath + "mailHost.config").getAbsolutePath();
 
-        mailListFilename = new File(defaultPath + "/mailToList.txt").getAbsolutePath();
+        mailListFilename = new File(defaultPath + "mailToList.txt").getAbsolutePath();
 
-        initMessageBody(defaultPath + "/mailBody.txt");
+        initMessageBody(defaultPath + "mailBody.txt");
 
         mailBus.register(new EventBusSendMail());
     }
 
     private void intiMailAgentManager(String defaultPath) throws RuntimeException{
 
-        mailHostListFile = new MailHostListFile(Paths.get(defaultPath,"mailHostList.txt").toUri().getPath());
-        mailHeaderConfig = new MailHeaderConfig(Paths.get(defaultPath,"mailHeader.config").toUri().getPath());
+        mailHostListFile = new MailHostListFile(defaultPath+"mailHostList.txt");
+        mailHeaderConfig = new MailHeaderConfig(defaultPath+"mailHeader.config");
         mailAgentManager = new MailAgentManager(this.executor);
         mailAgentManager.setMailHeaders(mailHeaderConfig);
         mailAgentManager.setMailServers(mailHostListFile);
@@ -72,7 +72,7 @@ public class Main {
     private void initMarcoExecutor(String defaultPath){
         this.executor = new MarcoExecutor();
         try {
-            MarcoBuilder.build(this.executor,Paths.get(defaultPath+"/marco"));
+            MarcoBuilder.build(this.executor,Paths.get(defaultPath+"marco"));
         } catch (Exception e) {
             log.error("MarcoExecutor add Extend Marcos Error.", e);
         }
@@ -124,7 +124,9 @@ public class Main {
     public static void main(String[] args) {
         log.info("Mail Send Start :");
 
-        Main main = new Main(args[0]);
+        System.out.println(System.getProperty("user.dir"));
+        String defaultPath = (args.length==0)?System.getProperty("user.dir")+System.getProperty("file.separator"):args[0];
+        Main main = new Main(defaultPath);
         main.start();
     }
 }

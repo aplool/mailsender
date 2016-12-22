@@ -106,13 +106,12 @@ public class MailAgentManager {
         InetAddress inetAddress = null;
         try {
             inetAddress = InetAddress.getByName(ip);
-            result = inetAddress.isReachable(1000);
+            result = inetAddress.isReachable(3000);
         } catch (UnknownHostException e) {
             log.error("IP {} is unkownHost.", ip);
         } catch (IOException e) {
             log.error("IP {} is io Error",ip);
         }
-        log.debug("IP {} is reachable : {}", ip, result);
         return result;
     }
     public boolean testSendMail(MailAgent mailAgent) {
@@ -121,7 +120,7 @@ public class MailAgentManager {
         MailItem mailItem = new MailItem();
         MailAddress fromEmail = new MailAddress("admin@mail.com", "Mail Admin");
         mailItem.from = fromEmail;
-        MailAddress toEmail = new MailAddress("admino@mail.com", "Mail Admin");
+        MailAddress toEmail = new MailAddress("admin@mail.com", "Mail Admin");
         mailItem.addTo(toEmail);
         mailItem.subject = "TestMail 測試郵件";
         mailItem.contentType = EmailConstants.TEXT_HTML;
