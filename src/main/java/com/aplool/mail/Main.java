@@ -105,17 +105,19 @@ public class Main {
                     mailItem.addTo(toEmail);
                     mailItem.contentType = EmailConstants.TEXT_HTML;
                     mailItem.message = messageBody;
+                    mailItem.from.mailAddress = email;
                     Boolean sendResult = mailAgent.sendMail(mailItem);
                     log.info("Mail to: {}, Message Body: {} => {}"  ,email,mailItem.message,sendResult.toString());
                     if (!sendResult) {
                         mailAgent = mailAgentManager.build();
                     }
                 } else {
-                    log.info("Mail Fail : Send to {} without Mail Host !", email);
+                    log.info("Mail Fail1 : Send to {} without Mail Host !", email);
                 }
             } catch (Exception e){
-                log.info("Mail Fail : Send to {} without Mail Host !", email);
-                log.error("Mail Fail",e.getCause());
+                log.info("Mail Fail2 : Send to {} without Mail Host !", email);
+                log.error("Mail Fail3",e.getCause());
+                e.printStackTrace();
             }
 
         }

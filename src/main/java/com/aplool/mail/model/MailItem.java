@@ -10,7 +10,7 @@ import java.util.List;
  * Created by leokao on 11/18/2016.
  */
 public class MailItem {
-    public MailAddress from;
+    public MailAddress from = new MailAddress();
     public List<MailAddress> to = new ArrayList<MailAddress>();
     public List<MailAddress> cc = new ArrayList<MailAddress>();
     public List<MailAddress> bcc = new ArrayList<MailAddress>();
