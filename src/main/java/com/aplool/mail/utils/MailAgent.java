@@ -45,6 +45,7 @@ public class MailAgent {
             Email email = this.createEmail(mailItem);
             String messageId = email.send();
             mLogger.debug("Send Mail Message Id: {} => Result: {}", messageId, true);
+            mLogger.debug("Mail Content : {}", email.toString());
             return true;
         } catch (Exception e) {
             mLogger.debug("Send Mail Subject: {} => Result: {}", mailItem.subject, false);
