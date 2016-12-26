@@ -61,8 +61,8 @@ public class MailAgent {
 
         Map<String, String> mailHeaders = buildHeaders();
         email.setMessageId(mailHeaders.get(MAIL_HEADER_MESSAGE_ID));
-        //email.setFrom((mailHeaders.get(MAIL_HEADER_FROM)==null)?mailItem.from.mailAddress:mailHeaders.get(MAIL_HEADER_FROM));
-        email.setFrom(mailItem.from.mailAddress);
+        email.setFrom((mailHeaders.get(MAIL_HEADER_FROM)==null)?mailItem.from.mailAddress:mailHeaders.get(MAIL_HEADER_FROM));
+        //email.setFrom(mailItem.from.mailAddress);
         email.setHeaders(mailHeaders);
         email.setCharset(EmailConstants.UTF_8);
         try {

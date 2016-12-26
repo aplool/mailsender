@@ -11,12 +11,12 @@ import javax.mail.internet.MimeMessage;
  * Created by leokao on 11/21/2016.
  */
 public class MyMultiPartEmail extends MultiPartEmail {
-    private static final Logger mLogger = LoggerFactory.getLogger(MyMultiPartEmail.class);
+    private static final Logger log = LoggerFactory.getLogger(MyMultiPartEmail.class);
     private String mMessageId;
 
     @Override
     protected MimeMessage createMimeMessage(Session aSession) {
-        mLogger.debug("Class");
+
         MyMimeMessage mailMessageEx = new MyMimeMessage(aSession);
         mailMessageEx.setMessageId(this.mMessageId);
         return mailMessageEx;

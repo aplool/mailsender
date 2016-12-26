@@ -32,7 +32,8 @@ public class RandomDateTime extends Marco {
 
         Long randomTime = ThreadLocalRandom.current().nextLong(0,System.currentTimeMillis());
 
-        Date result = new Date(randomTime);
+        //Date result = new Date(randomTime);
+        Date result = new Date(System.currentTimeMillis());
         return result;
     }
 }

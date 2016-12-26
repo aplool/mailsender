@@ -105,7 +105,7 @@ public class Main {
                     mailItem.addTo(toEmail);
                     mailItem.contentType = EmailConstants.TEXT_HTML;
                     mailItem.message = messageBody;
-                    mailItem.from.mailAddress = email;
+
                     Boolean sendResult = mailAgent.sendMail(mailItem);
                     log.info("Mail to: {}, Message Body: {} => {}"  ,email,mailItem.message,sendResult.toString());
                     if (!sendResult) {

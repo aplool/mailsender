@@ -14,7 +14,7 @@ import java.io.InputStream;
  * Created by leokao on 11/21/2016.
  */
 public class MyMimeMessage extends MimeMessage {
-    private static final Logger logger = LoggerFactory.getLogger(MyMimeMessage.class);
+    private static final Logger log = LoggerFactory.getLogger(MyMimeMessage.class);
     private String mMessageId;
 
     public MyMimeMessage(Session session) {
@@ -44,7 +44,6 @@ public class MyMimeMessage extends MimeMessage {
     @Override
     protected void updateMessageID() throws MessagingException {
         super.setHeader("Message-ID", mMessageId);
-        logger.debug("Class Message" + mMessageId);
     }
 
     public String getMessageId() {
@@ -52,9 +51,6 @@ public class MyMimeMessage extends MimeMessage {
     }
 
     public void setMessageId(String mMessageId) {
-        try {
-            this.mMessageId = mMessageId;
-            logger.debug(this.getHeader("Message-Id").toString());
-        }catch (Exception e) {};
+        this.mMessageId = mMessageId;
     }
 }
