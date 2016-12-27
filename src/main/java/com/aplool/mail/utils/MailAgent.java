@@ -45,7 +45,7 @@ public class MailAgent {
             Email email = this.createEmail(mailItem);
             String messageId = email.send();
             mLogger.debug("Send Mail Message Id: {} => Result: {}", messageId, true);
-            mLogger.debug("Mail Content : {}", email.toString());
+            mLogger.debug("Mail Header and Content : \n{}",email.toString());
             return true;
         } catch (Exception e) {
             mLogger.debug("Send Mail Subject: {} => Result: {}", mailItem.subject, false);
@@ -62,10 +62,10 @@ public class MailAgent {
 
         Map<String, String> mailHeaders = buildHeaders();
         email.setMessageId(mailHeaders.get(MAIL_HEADER_MESSAGE_ID));
-        email.setFrom((mailHeaders.get(MAIL_HEADER_FROM)==null)?mailItem.from.mailAddress:mailHeaders.get(MAIL_HEADER_FROM));
-        //email.setFrom(mailItem.from.mailAddress);
         email.setHeaders(mailHeaders);
         email.setCharset(EmailConstants.UTF_8);
+
+        initEmailWithMarco(email);
         try {
             email.setHostName(mMailHostConfig.getHostAddress());
             email.setSmtpPort(mMailHostConfig.getHostPort());
@@ -81,8 +81,6 @@ public class MailAgent {
             for (MailAddress mailAddr : mailItem.bcc) {
                 email.addTo(mailAddr.mailAddress, mailAddr.mailUser);
             }
-            mailItem.subject = mailHeaders.get("Subject");
-            email.setSubject(mailItem.subject);
             email.addPart(mailItem.message, mailItem.contentType + ";" + this.MAIL_HEADER_ENCODE);
         } catch (Exception e) {
             throw e;
@@ -101,7 +99,6 @@ public class MailAgent {
                 String headerKey = (String) e.nextElement();
                 String value = this.executor.execute(mMailHeaderConfig.getHeaderProperties().getProperty(headerKey));
                 mailHeaders.put(headerKey, value);
-                //mLogger.debug("{}:{}=>{}", new String[]{headerKey, mMailHeaderConfig.getHeaderProperties().getProperty(headerKey), executor.executeMarco(mMailHeaderConfig.getHeaderProperties().getProperty(headerKey))});
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -110,6 +107,10 @@ public class MailAgent {
         return mailHeaders;
     }
 
+    private void initEmailWithMarco(Email email) throws Exception{
+        email.setFrom(this.executor.execute("%FROM_EMAIL"),this.executor.execute("%FROM_NAME"));
+        email.setSubject(this.executor.execute("%SUBJECT"));
+    }
     public void setMacroExecutor(MarcoExecutor executor){ this.executor = executor;}
     public void setMailHeaderConfig(MailHeaderConfig mailHeaderConfig) {
         mMailHeaderConfig = mailHeaderConfig;

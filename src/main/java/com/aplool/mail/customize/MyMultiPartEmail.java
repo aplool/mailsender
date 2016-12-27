@@ -29,4 +29,14 @@ public class MyMultiPartEmail extends MultiPartEmail {
     public void setMessageId(String mMessageId) {
         this.mMessageId = mMessageId;
     }
-}
+
+    public String toString() {
+        StringBuilder r = new StringBuilder();
+        r.append(String.format("Mail Header \n"));
+        this.headers.forEach((k, v) -> {
+            r.append(String.format("\t %s : %s \n", k, v));
+        });
+        r.append(String.format("Mail From : %s \n", this.getFromAddress().toString()));
+        return r.toString();
+    }
+    }
