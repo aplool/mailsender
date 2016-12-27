@@ -166,7 +166,7 @@ public class SmtpServer {
         mailItem.subject = "TestMail 測試郵件";
         mailItem.contentType = EmailConstants.TEXT_HTML;
         mailItem.message = "This is Test Mail 這是測試郵件";
-        sendResult = mailAgent.sendMail(mailItem);
+        sendResult = mailAgent.send(mailItem);
         return sendResult;
     }
 

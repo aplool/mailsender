@@ -44,7 +44,11 @@ public class MailAgentManager {
         MailAgent result = null;
         while((ip=mailServers.getNewHostIP()) != ""){
             result = this.build(ip);
-            if(result!=null) break;
+            if(result!=null) {
+                log.info("IP {} : Mail Relay Server",ip);
+                break;
+            }
+            log.info("IP {} : not Relay", ip);
         }
         return result;
     }
@@ -125,7 +129,7 @@ public class MailAgentManager {
         mailItem.subject = "TestMail 測試郵件";
         mailItem.contentType = EmailConstants.TEXT_HTML;
         mailItem.message = "This is Test Mail 這是測試郵件";
-        result = mailAgent.sendMail(mailItem);
+        result = mailAgent.send(mailItem);
 
         return result;
     }

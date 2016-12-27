@@ -7,7 +7,6 @@ import com.aplool.mail.model.MailItem;
 import org.apache.commons.mail.EmailConstants;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,7 +67,7 @@ public class MailAgentTest {
                 mailItem.message = mailAgent.loadMessageBodyFromFile(this.getClass().getClassLoader().getResource("mailBody.txt").getPath().toString());
                 mLogger.info("Mail to: {} , Message Body: {}", mailToEmail, mailItem.message);
                 try {
-                    sendResult = mailAgent.sendMail(mailItem);
+                    sendResult = mailAgent.send(mailItem);
                     Assert.assertEquals(true, sendResult);
                 } catch (Exception e) {
                     e.printStackTrace();

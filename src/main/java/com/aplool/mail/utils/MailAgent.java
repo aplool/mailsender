@@ -8,20 +8,22 @@ import com.aplool.mail.model.MailHostConfig;
 import com.aplool.mail.model.MailItem;
 import org.apache.commons.mail.Email;
 import org.apache.commons.mail.EmailConstants;
+import org.apache.commons.mail.EmailException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Stream;
 
 
 /**
  * Created by leokao on 11/17/2016.
  */
 public class MailAgent {
-    private static final Logger mLogger = LoggerFactory.getLogger(MailAgent.class);
+    private final Logger log = LoggerFactory.getLogger(MailAgent.class);
     private static final boolean debugFlag = true;
     private MailHostConfig mMailHostConfig = null;
     private MailHeaderConfig mMailHeaderConfig = null;
@@ -40,31 +42,44 @@ public class MailAgent {
         mMailHostConfig = mailHostConfig;
     }
 
-    public boolean sendMail(MailItem mailItem) {
+    public void sendBulk(String mailListFilename, String messageBody){
+        try (Stream<String> stream = Files.lines(Paths.get(mailListFilename))) {
+            stream.forEach((email)->{
+                MailItem mailItem = new MailItem();
+                MailAddress toEmail = new MailAddress(email, email);
+                mailItem.addTo(toEmail);
+                mailItem.contentType = EmailConstants.TEXT_HTML;
+                mailItem.message = messageBody;
+                boolean result = send(mailItem);
+                log.info("[{}] Mail to {}",String.valueOf(result),email);
+            });
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    public boolean send(MailItem mailItem) {
+        boolean result = false;
         try {
             Email email = this.createEmail(mailItem);
             String messageId = email.send();
-            mLogger.debug("Send Mail Message Id: {} => Result: {}", messageId, true);
-            mLogger.debug("Mail Header and Content : \n{}",email.toString());
-            return true;
+            log.debug("Send Mail Message Id: {} => Result: {}", messageId, true);
+            log.debug("Mail Header and Content : \n{}",email.toString());
+            result = true;
+        } catch (EmailException e) {
+            log.debug("Mail Fail with  : {}", e.getMessage());
         } catch (Exception e) {
-            mLogger.debug("Send Mail Subject: {} => Result: {}", mailItem.subject, false);
-            if (debugFlag) {
-                e.printStackTrace();
-            }
-            return false;
+            log.debug("Mail Fail with  : {}", e.getMessage());
         }
+        return result;
     }
 
 
     private Email createEmail(MailItem mailItem) throws Exception {
         MyMultiPartEmail email = new MyMultiPartEmail();
-
-        Map<String, String> mailHeaders = buildHeaders();
-        email.setMessageId(mailHeaders.get(MAIL_HEADER_MESSAGE_ID));
-        email.setHeaders(mailHeaders);
         email.setCharset(EmailConstants.UTF_8);
 
+        initEmailWithHeaders(email);
         initEmailWithMarco(email);
         try {
             email.setHostName(mMailHostConfig.getHostAddress());
@@ -88,7 +103,7 @@ public class MailAgent {
         return email;
     }
 
-    private Map<String, String> buildHeaders() {
+    private void initEmailWithHeaders(MyMultiPartEmail email) {
 
         Map<String, String> mailHeaders = new HashMap<String, String>();
         try {
@@ -100,52 +115,24 @@ public class MailAgent {
                 String value = this.executor.execute(mMailHeaderConfig.getHeaderProperties().getProperty(headerKey));
                 mailHeaders.put(headerKey, value);
             }
+            email.setMessageId(mailHeaders.get(MAIL_HEADER_MESSAGE_ID));
+            email.setHeaders(mailHeaders);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-        return mailHeaders;
     }
 
     private void initEmailWithMarco(Email email) throws Exception{
         email.setFrom(this.executor.execute("%FROM_EMAIL"),this.executor.execute("%FROM_NAME"));
         email.setSubject(this.executor.execute("%SUBJECT"));
     }
+
     public void setMacroExecutor(MarcoExecutor executor){ this.executor = executor;}
     public void setMailHeaderConfig(MailHeaderConfig mailHeaderConfig) {
         mMailHeaderConfig = mailHeaderConfig;
     }
 
-    public String loadMessageBodyFromFile(String filePath) throws IOException {
-        BufferedReader bufferedReader = new BufferedReader(new FileReader(filePath));
-        try {
-            StringBuilder stringBuilder = new StringBuilder();
-            String line = bufferedReader.readLine();
 
-            while (line != null) {
-                stringBuilder.append(line);
-                stringBuilder.append("\n");
-                line = bufferedReader.readLine();
-            }
-            return stringBuilder.toString();
-        } finally {
-            bufferedReader.close();
-        }
-    }
 
-    public static List<String> loadMailToFromFile(String filePath) throws IOException {
-        List<String> mailToList = new LinkedList<>();
-        BufferedReader bufferedReader = new BufferedReader(new FileReader(filePath));
-        try {
-            String line = bufferedReader.readLine();
-
-            while (line != null) {
-                mailToList.add(line);
-                line = bufferedReader.readLine();
-            }
-            return mailToList;
-        } finally {
-            bufferedReader.close();
-        }
-    }
 }

@@ -40,8 +40,6 @@ public class Main {
     public Main(String defaultPath) {
         initMarcoExecutor(defaultPath);
         intiMailAgentManager(defaultPath);
-        String configPath = new File(defaultPath + "mailHost.config").getAbsolutePath();
-
         mailListFilename = new File(defaultPath + "mailToList.txt").getAbsolutePath();
 
         initMessageBody(defaultPath + "mailBody.txt");
@@ -56,8 +54,8 @@ public class Main {
         mailAgentManager = new MailAgentManager(this.executor);
         mailAgentManager.setMailHeaders(mailHeaderConfig);
         mailAgentManager.setMailServers(mailHostListFile);
-        mailAgent = mailAgentManager.build();
-        if(mailAgent == null) throw new RuntimeException("No available Mail Server.");
+        //mailAgent = mailAgentManager.build();
+        //if(mailAgent == null) throw new RuntimeException("No available Mail Server.");
     }
     private void initMessageBody(String filename){
         try {
@@ -79,7 +77,9 @@ public class Main {
     }
 
     public void start(){
-        sendMailWithEmailList(mailListFilename);
+        while((mailAgent=mailAgentManager.build())!=null) {
+            mailAgent.sendBulk(mailListFilename,messageBody);
+        }
     }
     private void sendMailWithEmailList(String fileName){
         try (Stream<String> stream = Files.lines(Paths.get(fileName))) {
@@ -106,7 +106,7 @@ public class Main {
                     mailItem.contentType = EmailConstants.TEXT_HTML;
                     mailItem.message = messageBody;
 
-                    Boolean sendResult = mailAgent.sendMail(mailItem);
+                    Boolean sendResult = mailAgent.send(mailItem);
                     log.info("Mail to: {}, Message Body: {} => {}"  ,email,mailItem.message,sendResult.toString());
                     if (!sendResult) {
                         mailAgent = mailAgentManager.build();
