@@ -19,6 +19,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RunnableFuture;
 import java.util.stream.Stream;
 
 /**
@@ -37,7 +40,7 @@ public class Main {
     MailAgentManager mailAgentManager;
     EventBus mailBus = new EventBus();
 
-    public Main(String defaultPath) {
+    public Main(String defaultPath) throws RuntimeException{
         initMarcoExecutor(defaultPath);
         intiMailAgentManager(defaultPath);
         mailListFilename = new File(defaultPath + "mailToList.txt").getAbsolutePath();
@@ -57,29 +60,37 @@ public class Main {
         //mailAgent = mailAgentManager.build();
         //if(mailAgent == null) throw new RuntimeException("No available Mail Server.");
     }
-    private void initMessageBody(String filename){
+    private void initMessageBody(String filename) throws RuntimeException{
         try {
             byte[] content = Files.readAllBytes(Paths.get(filename));
             messageBody = new String(content);
         } catch (IOException e) {
-            log.error("Message Body init error with : {}", filename);
+            throw new RuntimeException(String.format("Message Body init error with : %s", filename));
         }
     }
 
 
-    private void initMarcoExecutor(String defaultPath){
+    private void initMarcoExecutor(String defaultPath) throws RuntimeException{
         this.executor = new MarcoExecutor();
         try {
             MarcoBuilder.build(this.executor,Paths.get(defaultPath+"marco"));
         } catch (Exception e) {
-            log.error("MarcoExecutor add Extend Marcos Error.", e);
+            throw new RuntimeException("MarcoExecutor add Extend Marcos Error.", e);
         }
     }
 
     public void start(){
+        ExecutorService pool = Executors.newFixedThreadPool(10);
         while((mailAgent=mailAgentManager.build())!=null) {
-            mailAgent.sendBulk(mailListFilename,messageBody);
+            pool.submit(new Runnable() {
+                @Override
+                public void run() {
+                    mailAgent.sendBulk(mailListFilename,messageBody);
+                }
+            });
+            //mailAgent.sendBulk(mailListFilename,messageBody);
         }
+        pool.shutdown();
     }
     private void sendMailWithEmailList(String fileName){
         try (Stream<String> stream = Files.lines(Paths.get(fileName))) {
@@ -126,9 +137,17 @@ public class Main {
     public static void main(String[] args) {
         log.info("Mail Send Start :");
 
-        System.out.println(System.getProperty("user.dir"));
+        log.debug("User Dir : {}",System.getProperty("user.dir"));
+
         String defaultPath = (args.length==0)?System.getProperty("user.dir")+System.getProperty("file.separator"):args[0];
-        Main main = new Main(defaultPath);
-        main.start();
+        Main main = null;
+        try {
+            main = new Main(defaultPath);
+            main.start();
+        } catch (RuntimeException e) {
+            log.error(e.getMessage());
+
+        }
+
     }
 }

@@ -24,7 +24,6 @@ import java.util.stream.Stream;
  */
 public class MailAgent {
     private final Logger log = LoggerFactory.getLogger(MailAgent.class);
-    private static final boolean debugFlag = true;
     private MailHostConfig mMailHostConfig = null;
     private MailHeaderConfig mMailHeaderConfig = null;
     private MarcoExecutor executor=null;
@@ -51,7 +50,7 @@ public class MailAgent {
                 mailItem.contentType = EmailConstants.TEXT_HTML;
                 mailItem.message = messageBody;
                 boolean result = send(mailItem);
-                log.info("[{}] Mail to {}",String.valueOf(result),email);
+                log.info("[{}] [{}] Mail to {}",String.valueOf(result),this.mMailHostConfig.getHostAddress(),email);
             });
 
         } catch (IOException e) {
@@ -79,7 +78,7 @@ public class MailAgent {
         MyMultiPartEmail email = new MyMultiPartEmail();
         email.setCharset(EmailConstants.UTF_8);
 
-        initEmailWithHeaders(email);
+        //initEmailWithHeaders(email);
         initEmailWithMarco(email);
         try {
             email.setHostName(mMailHostConfig.getHostAddress());
