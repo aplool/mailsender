@@ -11,14 +11,18 @@ import com.aplool.mail.utils.MailAgentManager;
 import com.aplool.mail.utils.MailHostListFile;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import org.apache.commons.configuration2.io.InputStreamSupport;
 import org.apache.commons.mail.EmailConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RunnableFuture;
@@ -38,27 +42,43 @@ public class Main {
     MarcoExecutor executor;
     MailHostListFile mailHostListFile;
     MailAgentManager mailAgentManager;
-    EventBus mailBus = new EventBus();
+
 
     public Main(String defaultPath) throws RuntimeException{
+        initAppConfig(defaultPath);
         initMarcoExecutor(defaultPath);
         intiMailAgentManager(defaultPath);
         mailListFilename = new File(defaultPath + "mailToList.txt").getAbsolutePath();
 
         initMessageBody(defaultPath + "mailBody.txt");
 
-        mailBus.register(new EventBusSendMail());
     }
 
+    private void initAppConfig(String defaultPath){
+        Properties props = new Properties();
+        InputStream stream = null;
+        try {
+            stream = new FileInputStream(defaultPath+"app.config");
+            props.load(stream);
+            App.addConfig(props);
+        } catch (IOException e) {
+            log.error("Initial Custom Config Error : {} ", e.getMessage());
+        } finally {
+            if(stream != null ){
+                try {
+                    stream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
     private void intiMailAgentManager(String defaultPath) throws RuntimeException{
-
         mailHostListFile = new MailHostListFile(defaultPath+"mailHostList.txt");
         mailHeaderConfig = new MailHeaderConfig(defaultPath+"mailHeader.config");
         mailAgentManager = new MailAgentManager(this.executor);
         mailAgentManager.setMailHeaders(mailHeaderConfig);
         mailAgentManager.setMailServers(mailHostListFile);
-        //mailAgent = mailAgentManager.build();
-        //if(mailAgent == null) throw new RuntimeException("No available Mail Server.");
     }
     private void initMessageBody(String filename) throws RuntimeException{
         try {
@@ -80,7 +100,7 @@ public class Main {
     }
 
     public void start(){
-        ExecutorService pool = Executors.newFixedThreadPool(10);
+        ExecutorService pool = Executors.newFixedThreadPool(App.getConfig().getInt("mailagent.max"));
         while((mailAgent=mailAgentManager.build())!=null) {
             pool.submit(new Runnable() {
                 @Override
@@ -88,65 +108,22 @@ public class Main {
                     mailAgent.sendBulk(mailListFilename,messageBody);
                 }
             });
-            //mailAgent.sendBulk(mailListFilename,messageBody);
         }
         pool.shutdown();
-    }
-    private void sendMailWithEmailList(String fileName){
-        try (Stream<String> stream = Files.lines(Paths.get(fileName))) {
-
-            stream.forEach((v)->{
-                mailBus.post(v);
-            });
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    class EventBusSendMail {
-        @Subscribe
-        public void recordCustomerChange(String email) {
-
-            try {
-
-                if (mailAgent != null) {
-                    MailItem mailItem = new MailItem();
-                    MailAddress toEmail = new MailAddress(email, email);
-                    mailItem.addTo(toEmail);
-                    mailItem.contentType = EmailConstants.TEXT_HTML;
-                    mailItem.message = messageBody;
-
-                    Boolean sendResult = mailAgent.send(mailItem);
-                    log.info("Mail to: {}, Message Body: {} => {}"  ,email,mailItem.message,sendResult.toString());
-                    if (!sendResult) {
-                        mailAgent = mailAgentManager.build();
-                    }
-                } else {
-                    log.info("Mail Fail1 : Send to {} without Mail Host !", email);
-                }
-            } catch (Exception e){
-                log.info("Mail Fail2 : Send to {} without Mail Host !", email);
-                log.error("Mail Fail3",e.getCause());
-                e.printStackTrace();
-            }
-
-        }
     }
 
     public static void main(String[] args) {
         log.info("Mail Send Start :");
 
-        log.debug("User Dir : {}",System.getProperty("user.dir"));
-
         String defaultPath = (args.length==0)?System.getProperty("user.dir")+System.getProperty("file.separator"):args[0];
         Main main = null;
+
         try {
             main = new Main(defaultPath);
             main.start();
+
         } catch (RuntimeException e) {
             log.error(e.getMessage());
-
         }
 
     }
