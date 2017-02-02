@@ -1,6 +1,7 @@
 package com.aplool.mail.utils;
 
 import com.aplool.macro.MarcoExecutor;
+import com.aplool.mail.App;
 import com.aplool.mail.model.MailAddress;
 import com.aplool.mail.model.MailHeaderConfig;
 import com.aplool.mail.model.MailHostConfig;
@@ -122,11 +123,11 @@ public class MailAgentManager {
         boolean result = false;
 
         MailItem mailItem = new MailItem();
-        MailAddress fromEmail = new MailAddress("admin@mail.com", "Mail Admin");
+        MailAddress fromEmail = new MailAddress(App.getConfig().getString("admin.email"), "Mail Admin");
         mailItem.from = fromEmail;
-        MailAddress toEmail = new MailAddress("admin@mail.com", "Mail Admin");
+        MailAddress toEmail = new MailAddress(App.getConfig().getString("admin.email"), "Mail Admin");
         mailItem.addTo(toEmail);
-        mailItem.subject = "TestMail 測試郵件";
+        mailItem.subject = "[TestMail] 測試郵件";
         mailItem.contentType = EmailConstants.TEXT_HTML;
         mailItem.message = "This is Test Mail 這是測試郵件";
         result = mailAgent.send(mailItem);

@@ -1,6 +1,7 @@
 package com.aplool.mail.utils;
 
 import com.aplool.macro.MarcoExecutor;
+import com.aplool.mail.App;
 import com.aplool.mail.customize.MyMultiPartEmail;
 import com.aplool.mail.model.MailAddress;
 import com.aplool.mail.model.MailHeaderConfig;
@@ -16,6 +17,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 
 
@@ -42,20 +45,38 @@ public class MailAgent {
     }
 
     public void sendBulk(String mailListFilename, String messageBody){
+        ExecutorService pool = Executors.newFixedThreadPool(App.getConfig().getInt("mailagent.send.max"));
+
         try (Stream<String> stream = Files.lines(Paths.get(mailListFilename))) {
-            stream.forEach((email)->{
+            stream.forEach((toMail)->{
                 MailItem mailItem = new MailItem();
-                MailAddress toEmail = new MailAddress(email, email);
+                MailAddress toEmail = new MailAddress(toMail, toMail);
                 mailItem.addTo(toEmail);
                 mailItem.contentType = EmailConstants.TEXT_HTML;
                 mailItem.message = messageBody;
-                boolean result = send(mailItem);
-                log.info("[{}] [{}] Mail to {}",String.valueOf(result),this.mMailHostConfig.getHostAddress(),email);
+                Email email = createEmail(mailItem);
+                pool.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        boolean result = false;
+                        try {
+                            String messageId = email.send();
+                            log.debug("Send Mail Message Id: {} => Result: {}", messageId, true);
+                            log.debug("Mail Header and Content : \n{}",email.toString());
+                            result = true;
+                        } catch (EmailException e) {
+                            log.debug("Mail Fail with  : {}", e.getMessage());
+                        } catch (Exception e) {
+                            log.debug("Mail Fail with  : {}", e.getMessage());
+                        }
+                        log.info("[{}] [{}] Mail to {}",String.valueOf(result),mMailHostConfig.getHostAddress(),email.getToAddresses());
+                    }
+                });
             });
-
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("sendBulk Error : {}", e.getMessage());
         }
+        pool.shutdown();
     }
     public boolean send(MailItem mailItem) {
         boolean result = false;
@@ -74,13 +95,14 @@ public class MailAgent {
     }
 
 
-    private Email createEmail(MailItem mailItem) throws Exception {
+    private Email createEmail(MailItem mailItem) throws RuntimeException {
+
         MyMultiPartEmail email = new MyMultiPartEmail();
         email.setCharset(EmailConstants.UTF_8);
 
         //initEmailWithHeaders(email);
-        initEmailWithMarco(email);
         try {
+            initEmailWithMarco(email);
             email.setHostName(mMailHostConfig.getHostAddress());
             email.setSmtpPort(mMailHostConfig.getHostPort());
             email.setAuthenticator(mMailHostConfig.getAuthenticator());
@@ -97,7 +119,7 @@ public class MailAgent {
             }
             email.addPart(mailItem.message, mailItem.contentType + ";" + this.MAIL_HEADER_ENCODE);
         } catch (Exception e) {
-            throw e;
+            throw new RuntimeException(e);
         }
         return email;
     }
