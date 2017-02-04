@@ -9,6 +9,7 @@ import com.aplool.mail.model.MailItem;
 import com.aplool.mail.utils.MailAgent;
 import com.aplool.mail.utils.MailAgentManager;
 import com.aplool.mail.utils.MailHostListFile;
+import com.aplool.mail.utils.MailListManager;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import org.apache.commons.configuration2.io.InputStreamSupport;
@@ -22,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -42,13 +44,16 @@ public class Main {
     MarcoExecutor executor;
     MailHostListFile mailHostListFile;
     MailAgentManager mailAgentManager;
+    MailListManager mailManager;
 
 
     public Main(String defaultPath) throws RuntimeException{
         initAppConfig(defaultPath);
         initMarcoExecutor(defaultPath);
         intiMailAgentManager(defaultPath);
+
         mailListFilename = new File(defaultPath + "mailToList.txt").getAbsolutePath();
+        initMailListManager(defaultPath);
 
         initMessageBody(defaultPath + "mailBody.txt");
 
@@ -80,6 +85,13 @@ public class Main {
         mailAgentManager.setMailHeaders(mailHeaderConfig);
         mailAgentManager.setMailServers(mailHostListFile);
     }
+    private void initMailListManager(String defaultPath) throws RuntimeException{
+        try {
+            mailManager = new MailListManager(mailListFilename,App.getConfig().getInt("seed.qty"));
+        } catch (IOException e) {
+            throw new RuntimeException("Mail List File Read Error.");
+        }
+    }
     private void initMessageBody(String filename) throws RuntimeException{
         try {
             byte[] content = Files.readAllBytes(Paths.get(filename));
@@ -102,10 +114,11 @@ public class Main {
     public void start(){
         ExecutorService pool = Executors.newFixedThreadPool(App.getConfig().getInt("mailagent.max"));
         while((mailAgent=mailAgentManager.build())!=null) {
+            List<String> emails = mailManager.next();
             pool.submit(new Runnable() {
                 @Override
                 public void run() {
-                    mailAgent.sendBulk(mailListFilename,messageBody);
+                    mailAgent.sendBulk(emails,messageBody);
                 }
             });
         }

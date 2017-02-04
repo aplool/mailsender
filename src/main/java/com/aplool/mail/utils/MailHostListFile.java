@@ -4,6 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -58,5 +60,20 @@ public class MailHostListFile {
         }
 
         return newIP;
+    }
+    public  static boolean isReachable(String ip){
+        boolean result = false;
+        if("".equals(ip.trim())) return false;
+        InetAddress inetAddress = null;
+        try {
+            inetAddress = InetAddress.getByName(ip);
+            result = inetAddress.isReachable(3000);
+        } catch (UnknownHostException e) {
+            log.error("IP {} is unkownHost.", ip);
+        } catch (IOException e) {
+            log.error("IP {} is io Error",ip);
+        }
+        log.info("IP {} is reachable.", ip);
+        return result;
     }
 }
