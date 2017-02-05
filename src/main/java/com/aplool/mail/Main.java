@@ -119,6 +119,7 @@ public class Main {
                         if (mailAgent != null) {
                             List<String> emails = mailManager.next();
                             emails.add(App.getConfig().getString("seed.email"));
+                            log.info("Send Mail with Size {}", emails.size());
                             mailAgent.sendBulk(emails, messageBody);
                         }
                     } catch (InterruptedException e) {
@@ -130,15 +131,7 @@ public class Main {
 
             });
         }
-//        while((mailAgent=mailAgentManager.build())!=null) {
-//            List<String> emails = mailManager.next();
-//            pool.submit(new Runnable() {
-//                @Override
-//                public void run() {
-//                    mailAgent.sendBulk(emails,messageBody);
-//                }
-//            });
-//        }
+
         mailRequestPool.shutdown();
         pool.shutdown();
     }
