@@ -17,18 +17,20 @@ import java.util.stream.Collectors;
  * Created by leokao on 12/16/2016.
  */
 public class MailHostListFile {
+    static String ERROR_MESSAGE_MAIL_HOST_EMPTY = "MailServerList is empty. [%s]";
+    static String ERROR_MESSAGE_MAIL_HOST_IO = "MailServerList is initial error . [%s]";
     private static final Logger log = LoggerFactory.getLogger(MailHostListFile.class);
 
     String filePath = "";
     int mailserverIndex =0;
     List<String> ips = null;
 
-    public MailHostListFile(String filePath) {
+    public MailHostListFile(String filePath) throws RuntimeException {
         this.filePath = filePath;
         initMailServerList();
     }
 
-    private void initMailServerList(){
+    private void initMailServerList() throws RuntimeException{
         Path file = Paths.get(filePath);
 
         try {
@@ -38,13 +40,18 @@ public class MailHostListFile {
             mailserverIndex =0;
             log.debug("MailServerList with {} ips", ips.size());
         } catch (IOException e) {
-            log.error("MailServerList File : {} is initial error.", file.toUri().getPath());
-            log.error("MailList init Error",e.getCause());
             ips = null;
+            throw new RuntimeException(String.format(ERROR_MESSAGE_MAIL_HOST_IO,file.toUri().getPath()),e.getCause());
         }
+        if(ips.size()==0) throw new RuntimeException(String.format(ERROR_MESSAGE_MAIL_HOST_EMPTY,file.toUri().getPath()));
     }
 
-    public String getNewHostIP() {
+    public boolean isNext(){
+        if(ips == null) return false;
+        if(mailserverIndex < (ips.size()-1)) return true;
+        return false;
+    }
+    public synchronized String getNewHostIP() {
         String result = "";
         if(ips == null) return result;
         if(mailserverIndex>=ips.size()) return result;

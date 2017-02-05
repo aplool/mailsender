@@ -64,8 +64,8 @@ public class MailAgent {
             mailItem.addTo(toEmail);
             mailItem.contentType = EmailConstants.TEXT_HTML;
             mailItem.message = messageBody;
-            Email email = createEmail(mailItem);
-            pool.submit(new Runnable() {
+            final Email email = createEmail(mailItem);
+            pool.execute(new Runnable() {
                 @Override
                 public void run() {
                     boolean result = false;
@@ -86,40 +86,7 @@ public class MailAgent {
 
         pool.shutdown();
     }
-//    public void sendBulk(String mailListFilename, String messageBody){
-//        ExecutorService pool = Executors.newFixedThreadPool(App.getConfig().getInt("mailagent.send.max"));
-//
-//        try (Stream<String> stream = Files.lines(Paths.get(mailListFilename))) {
-//            stream.forEach((toMail)->{
-//                MailItem mailItem = new MailItem();
-//                MailAddress toEmail = new MailAddress(toMail, toMail);
-//                mailItem.addTo(toEmail);
-//                mailItem.contentType = EmailConstants.TEXT_HTML;
-//                mailItem.message = messageBody;
-//                Email email = createEmail(mailItem);
-//                pool.submit(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        boolean result = false;
-//                        try {
-//                            String messageId = email.send();
-//                            log.debug("Send Mail Message Id: {} => Result: {}", messageId, true);
-//                            log.debug("Mail Header and Content : \n{}",email.toString());
-//                            result = true;
-//                        } catch (EmailException e) {
-//                            log.debug("Mail Fail with  : {}", e.getMessage());
-//                        } catch (Exception e) {
-//                            log.debug("Mail Fail with  : {}", e.getMessage());
-//                        }
-//                        log.info("[{}] [{}] Mail to {}",String.valueOf(result),mMailHostConfig.getHostAddress(),email.getToAddresses());
-//                    }
-//                });
-//            });
-//        } catch (IOException e) {
-//            log.error("sendBulk Error : {}", e.getMessage());
-//        }
-//        pool.shutdown();
-//    }
+
     public boolean send(MailItem mailItem) {
         boolean result = false;
         try {
