@@ -6,6 +6,7 @@ import com.aplool.mail.model.MailAddress;
 import com.aplool.mail.model.MailHeaderConfig;
 import com.aplool.mail.model.MailHostConfig;
 import com.aplool.mail.model.MailItem;
+import org.apache.commons.lang3.concurrent.CallableBackgroundInitializer;
 import org.apache.commons.mail.EmailConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Properties;
+import java.util.concurrent.Callable;
 
 /**
  * Created by longtai on 2016/12/21.
@@ -40,6 +42,15 @@ public class MailAgentManager {
         if(mailHeaders == null) return;
         this.mailHeaders = mailHeaders;
     }
+    public boolean isNext(){
+        return mailServers.isNext();
+    }
+    public Callable<MailAgent> get(){
+        Callable<MailAgent> result = () ->{
+            return build();
+        };
+        return result;
+    }
     public MailAgent build(){
         String ip;
         MailAgent result = null;
@@ -54,11 +65,11 @@ public class MailAgentManager {
         return result;
     }
     public MailAgent build(String ip){
-        MailHostConfig mailHost = new MailHostConfig();
+        final MailHostConfig mailHost = new MailHostConfig();
         mailHost.setHostAddress(ip);
         return this.build(mailHost);
     }
-    public MailAgent build(MailHostConfig mailHost){
+    public MailAgent build(final MailHostConfig mailHost){
 
         if(!isMailRelayable(mailHost.getHostAddress())) {
             log.debug("IP {} is mail relay : {}", mailHost.getHostAddress(), "false");
@@ -76,7 +87,7 @@ public class MailAgentManager {
 
         return mailAgent;
     }
-    public boolean isMailRelayable(String ip){
+    public boolean isMailRelayable(final String ip){
         boolean result = false;
         if(!isReachable(ip)) return false;
         Transport smtpTransport = null;
@@ -105,7 +116,7 @@ public class MailAgentManager {
         return result;
     }
 
-    public  boolean isReachable(String ip){
+    public  boolean isReachable(final String ip){
         boolean result = false;
         if("".equals(ip.trim())) return false;
         InetAddress inetAddress = null;

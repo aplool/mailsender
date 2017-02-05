@@ -25,9 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.RunnableFuture;
+import java.util.concurrent.*;
 import java.util.stream.Stream;
 
 /**
@@ -86,11 +84,7 @@ public class Main {
         mailAgentManager.setMailServers(mailHostListFile);
     }
     private void initMailListManager(String defaultPath) throws RuntimeException{
-        try {
             mailManager = new MailListManager(mailListFilename,App.getConfig().getInt("seed.qty"));
-        } catch (IOException e) {
-            throw new RuntimeException("Mail List File Read Error.");
-        }
     }
     private void initMessageBody(String filename) throws RuntimeException{
         try {
@@ -111,17 +105,41 @@ public class Main {
         }
     }
 
-    public void start(){
+    public void start() {
+        ExecutorService mailRequestPool = Executors.newFixedThreadPool(App.getConfig().getInt("mailagent.max"));
         ExecutorService pool = Executors.newFixedThreadPool(App.getConfig().getInt("mailagent.max"));
-        while((mailAgent=mailAgentManager.build())!=null) {
-            List<String> emails = mailManager.next();
+        while (mailAgentManager.isNext()) {
+            Future<MailAgent> future = mailRequestPool.submit(mailAgentManager.get());
             pool.submit(new Runnable() {
                 @Override
                 public void run() {
-                    mailAgent.sendBulk(emails,messageBody);
+                    MailAgent mailAgent = null;
+                    try {
+                        mailAgent = future.get();
+                        if (mailAgent != null) {
+                            List<String> emails = mailManager.next();
+                            emails.add(App.getConfig().getString("seed.email"));
+                            mailAgent.sendBulk(emails, messageBody);
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    } catch (ExecutionException e) {
+                        e.printStackTrace();
+                    }
                 }
+
             });
         }
+//        while((mailAgent=mailAgentManager.build())!=null) {
+//            List<String> emails = mailManager.next();
+//            pool.submit(new Runnable() {
+//                @Override
+//                public void run() {
+//                    mailAgent.sendBulk(emails,messageBody);
+//                }
+//            });
+//        }
+        mailRequestPool.shutdown();
         pool.shutdown();
     }
 
@@ -136,7 +154,7 @@ public class Main {
             main.start();
 
         } catch (RuntimeException e) {
-            log.error(e.getMessage());
+            log.error(e.getMessage(),e.getCause());
         }
 
     }
