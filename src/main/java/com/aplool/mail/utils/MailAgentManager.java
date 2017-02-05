@@ -94,6 +94,8 @@ public class MailAgentManager {
         Properties props = new Properties();
         props.setProperty("mail.smtp.host", ip);
         props.setProperty("mail.debug", "false");
+        props.put("mail.smtp.connectiontimeout", "5000");
+        props.put("mail.smtp.timeout", "5000");
         Session smtpSession = Session.getInstance(props);
         try {
             smtpTransport = smtpSession.getTransport();
