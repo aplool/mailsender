@@ -27,7 +27,7 @@ import java.util.stream.Stream;
  */
 public class MailAgent {
     private final Logger log = LoggerFactory.getLogger(MailAgent.class);
-    private MailHostConfig mMailHostConfig = null;
+    private final MailHostConfig mMailHostConfig;
     private MailHeaderConfig mMailHeaderConfig = null;
     private MarcoExecutor executor=null;
     public static final String MAIL_HEADER_MESSAGE_ID = "Message-ID";
@@ -40,8 +40,8 @@ public class MailAgent {
     public static final String MAIL_HEADER_ENCODE = "charset=UTF-8";
 
 
-    public MailAgent(MailHostConfig mailHostConfig) {
-        mMailHostConfig = mailHostConfig;
+    public MailAgent(final MailHostConfig mailHostConfig) {
+        this.mMailHostConfig = mailHostConfig;
     }
 
 
@@ -65,7 +65,7 @@ public class MailAgent {
             mailItem.contentType = EmailConstants.TEXT_HTML;
             mailItem.message = messageBody;
             final Email email = createEmail(mailItem);
-            pool.execute(new Runnable() {
+            pool.submit(new Runnable() {
                 @Override
                 public void run() {
                     boolean result = false;
@@ -163,6 +163,8 @@ public class MailAgent {
         mMailHeaderConfig = mailHeaderConfig;
     }
 
-
+    public MailHostConfig getMailHostConfig() {
+        return this.mMailHostConfig;
+    }
 
 }

@@ -2,18 +2,12 @@ package com.aplool.mail;
 
 import com.aplool.macro.MarcoBuilder;
 import com.aplool.macro.MarcoExecutor;
-import com.aplool.mail.model.MailAddress;
 import com.aplool.mail.model.MailHeaderConfig;
 import com.aplool.mail.model.MailHostConfig;
-import com.aplool.mail.model.MailItem;
 import com.aplool.mail.utils.MailAgent;
 import com.aplool.mail.utils.MailAgentManager;
 import com.aplool.mail.utils.MailHostListFile;
 import com.aplool.mail.utils.MailListManager;
-import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
-import org.apache.commons.configuration2.io.InputStreamSupport;
-import org.apache.commons.mail.EmailConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,13 +20,12 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.*;
-import java.util.stream.Stream;
 
 /**
- * Created by longtai on 2016/12/1.
+ * Created by longtai on 2017/2/6.
  */
-public class Main {
-    static Logger log = LoggerFactory.getLogger(Main.class);
+public class MainThread extends Thread {
+    Logger log = LoggerFactory.getLogger(this.getClass());
 
     MailHostConfig mailHostConfig = null;
     MailHeaderConfig mailHeaderConfig;
@@ -45,7 +38,7 @@ public class Main {
     MailListManager mailManager;
 
 
-    public Main(String defaultPath) throws RuntimeException{
+    public MainThread(String defaultPath) throws RuntimeException{
         initAppConfig(defaultPath);
         initMarcoExecutor(defaultPath);
         intiMailAgentManager(defaultPath);
@@ -84,7 +77,7 @@ public class Main {
         mailAgentManager.setMailServers(mailHostListFile);
     }
     private void initMailListManager(String defaultPath) throws RuntimeException{
-            mailManager = new MailListManager(mailListFilename,App.getConfig().getInt("seed.qty"));
+        mailManager = new MailListManager(mailListFilename,App.getConfig().getInt("seed.qty"));
     }
     private void initMessageBody(String filename) throws RuntimeException{
         try {
@@ -105,7 +98,8 @@ public class Main {
         }
     }
 
-    public void start() {
+    @Override
+    public void run() {
         ExecutorService mailRequestPool = Executors.newFixedThreadPool(App.getConfig().getInt("mailagent.max"));
         ExecutorService pool = Executors.newFixedThreadPool(App.getConfig().getInt("mailagent.max"));
         while (mailAgentManager.isNext()) {
@@ -115,17 +109,16 @@ public class Main {
                 public void run() {
                     MailAgent mailAgent = null;
                     try {
-                        mailAgent = future.get(60,TimeUnit.SECONDS);
+                        mailAgent = future.get(60, TimeUnit.SECONDS);
 
                         if (mailAgent != null) {
                             List<String> emails = mailManager.next();
                             emails.add(App.getConfig().getString("seed.email"));
-                            log.info("Send Mail with Size {}", emails.size());
                             mailAgent.sendBulk(emails, messageBody);
                         }
                     } catch (TimeoutException e) {
-                        log.info("Mail Server Validate faile.");
                         future.cancel(true);
+                        log.info("[{}] Mailhost created faile.",mailAgent.getMailHostConfig().getHostAddress());
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     } catch (ExecutionException e) {
@@ -137,20 +130,5 @@ public class Main {
 
         mailRequestPool.shutdown();
         pool.shutdown();
-    }
-
-    public static void main(String[] args) {
-        log.info("Mail Send Start :");
-
-        String defaultPath = (args.length==0)?System.getProperty("user.dir")+System.getProperty("file.separator"):args[0];
-        MainThread main = null;
-        try {
-            main = new MainThread(defaultPath);
-            main.start();
-
-        } catch (RuntimeException e) {
-            log.error(e.getMessage(),e.getCause());
-        }
-
     }
 }
