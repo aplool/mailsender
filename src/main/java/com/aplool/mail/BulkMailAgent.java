@@ -6,7 +6,9 @@ import org.slf4j.LoggerFactory;
 
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMultipart;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
@@ -129,7 +131,15 @@ public class BulkMailAgent {
                 testMessage.setFrom(fromAddress);
                 testMessage.addRecipient(Message.RecipientType.TO,toAddress);
                 testMessage.setSubject("[TestMail] 測試郵件 from ["+agent.getSession().getProperty("mail.smtp.host")+"]","UTF-8");
-                testMessage.setContent("[TestMail] 測試郵件","text/plain; charset=UTF-8");
+                Multipart multiPart = new MimeMultipart("alternative");
+                MimeBodyPart htmlPart = new MimeBodyPart();
+                htmlPart.setContent("<html><title>Test</title><body>This is 攝氏</body></html>", "text/html; charset=utf-8");
+                MimeBodyPart textPart = new MimeBodyPart();
+                textPart.setText("Mail Body 測試", "utf-8");
+                multiPart.addBodyPart(textPart);
+                multiPart.addBodyPart(htmlPart);
+                testMessage.setContent(multiPart);
+//                testMessage.setContent("[TestMail] 測試郵件","text/plain; charset=UTF-8");
                 result = agent.send(testMessage);
             } catch (MessagingException e) {
                 e.printStackTrace();
