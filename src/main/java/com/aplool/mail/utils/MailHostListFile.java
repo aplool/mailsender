@@ -61,14 +61,18 @@ public class MailHostListFile {
     }
 
     public String getNextReachableHost() {
-        String newIP="";
-        while((newIP = getNewHostIP()) !=""){
-            if(SmtpServer.isMailRelayable(newIP)) break;
+        boolean isGetNextIP = true;
+        String newIP = "";
+        while(isGetNextIP){
+            newIP = getNewHostIP();
+            if("".equals(newIP)||isReachable(newIP)){
+                isGetNextIP = false;
+            }
         }
 
         return newIP;
     }
-    public  static boolean isReachable(String ip){
+    public static boolean isReachable(String ip){
         boolean result = false;
         if("".equals(ip.trim())) return false;
         InetAddress inetAddress = null;

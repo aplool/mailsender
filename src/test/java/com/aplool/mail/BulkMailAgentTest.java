@@ -29,7 +29,9 @@ public class BulkMailAgentTest {
         ExecutorService pool = Executors.newFixedThreadPool(App.getConfig().getInt("mailagent.max"));
 
         while(servers.isNext()){
-            String ip = servers.getNewHostIP();
+            String ip = servers.getNextReachableHost();
+//            Callable<BulkMailAgent> agent = BulkMailAgent.build(ip);
+//            agent.call();
             Future<BulkMailAgent> future = poolBuilder.submit(BulkMailAgent.build(ip));
             pool.submit(new Runnable() {
                 @Override
@@ -37,15 +39,18 @@ public class BulkMailAgentTest {
                     BulkMailAgent agent = null;
                     try {
                         agent = future.get();
+                        if(agent != null) agent.close();
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        log.error(e.getMessage(),e.getCause());
                     } catch (ExecutionException e) {
-                        e.printStackTrace();
+                        log.error(e.getMessage(),e.getCause());
                     }
 
                 }
             });
         }
+        poolBuilder.shutdown();
+        pool.shutdown();
     }
 
 }
