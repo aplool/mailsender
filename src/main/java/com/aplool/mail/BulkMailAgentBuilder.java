@@ -41,20 +41,6 @@ public class BulkMailAgentBuilder  implements Callable<BulkMailAgent> {
         return result;
     }
 
-    boolean isReachable(String ip){
-        boolean result = false;
-        if("".equals(ip.trim())) return false;
-        InetAddress inetAddress = null;
-        try {
-            inetAddress = InetAddress.getByName(ip);
-            result = inetAddress.isReachable(3000);
-        } catch (UnknownHostException e) {
-            log.error("IP {} is unkownHost.", ip);
-        } catch (IOException e) {
-            log.error("IP {} is io Error",ip);
-        }
-        return result;
-    }
 
     BulkMailAgent buildBulkMailAgent(){
         BulkMailAgent result = null;
@@ -68,23 +54,24 @@ public class BulkMailAgentBuilder  implements Callable<BulkMailAgent> {
 
     boolean sendTestMail(BulkMailAgent agent){
         boolean result = false;
-        MimeMessage testMessage = new MimeMessage(agent.getSession());
+        BulkMimeMessage testMessage = new BulkMimeMessage(agent.getSession());
         try {
-            InternetAddress fromAddress = new InternetAddress("sales_account@yahoo.com.tw");
-            InternetAddress toAddress = new InternetAddress(App.getConfig().getString("admin.email"));
-            fromAddress.setPersonal("admin");
-            toAddress.setPersonal("Test Recipient");
+            InternetAddress fromAddress = new InternetAddress("sales_account@yahoo.com.tw","admin");
+            InternetAddress toAddress = new InternetAddress(App.getConfig().getString("admin.email"),"Test Recipient");
             testMessage.setFrom(fromAddress);
             testMessage.addRecipient(Message.RecipientType.TO,toAddress);
-            testMessage.setSubject("[TestMail] 測試郵件 from ["+agent.getSession().getProperty("mail.smtp.host")+"]","UTF-8");
-            Multipart multiPart = new MimeMultipart("alternative");
-            MimeBodyPart htmlPart = new MimeBodyPart();
-            htmlPart.setContent("<html><title>Test</title><body>This is 攝氏</body></html>", "text/html; charset=utf-8");
-            MimeBodyPart textPart = new MimeBodyPart();
-            textPart.setText("Mail Body 測試", "utf-8");
-            multiPart.addBodyPart(textPart);
-            multiPart.addBodyPart(htmlPart);
-            testMessage.setContent(multiPart);
+            testMessage.updateSubject("[TestMail] 測試郵件 from ["+agent.getSession().getProperty("mail.smtp.host")+"]");
+            //testMessage.setSubject("[TestMail] 測試郵件 from ["+agent.getSession().getProperty("mail.smtp.host")+"]","UTF-8");
+            testMessage.addHtml("<html><title>Test</title><body>This is 攝氏</body></html>");
+            testMessage.addText("Mail Body 測試");
+//            Multipart multiPart = new MimeMultipart("alternative");
+//            MimeBodyPart htmlPart = new MimeBodyPart();
+//            htmlPart.setContent("<html><title>Test</title><body>This is 攝氏</body></html>", "text/html; charset=utf-8");
+//            MimeBodyPart textPart = new MimeBodyPart();
+//            textPart.setText("Mail Body 測試", "utf-8");
+//            multiPart.addBodyPart(textPart);
+//            multiPart.addBodyPart(htmlPart);
+//            testMessage.setContent(multiPart);
 //            testMessage.setContent("[TestMail] 測試郵件","text/plain; charset=UTF-8");
             result = agent.send(testMessage);
         } catch (MessagingException e) {
