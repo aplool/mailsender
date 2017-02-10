@@ -4,7 +4,6 @@ import com.aplool.macro.MarcoBuilder;
 import com.aplool.macro.MarcoExecutor;
 import com.aplool.mail.model.MailHeaderConfig;
 import com.aplool.mail.model.MailHostConfig;
-import com.aplool.mail.utils.MailAgent;
 import com.aplool.mail.utils.MailAgentManager;
 import com.aplool.mail.utils.MailHostListFile;
 import com.aplool.mail.utils.MailListManager;
@@ -19,7 +18,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
  * Created by longtai on 2017/2/6.
@@ -31,18 +33,18 @@ public class MainThread extends Thread {
     MailHeaderConfig mailHeaderConfig;
     String mailListFilename;
     String messageBody;
-    MailAgent mailAgent = null;
     MarcoExecutor executor;
-    MailHostListFile mailHostListFile;
+    MailHostListFile servers;
     MailAgentManager mailAgentManager;
     MailListManager mailManager;
 
+    String defaultPath;
 
     public MainThread(String defaultPath) throws RuntimeException{
+        this.defaultPath = defaultPath;
         initAppConfig(defaultPath);
         initMarcoExecutor(defaultPath);
-        intiMailAgentManager(defaultPath);
-
+        initMailHostServer(defaultPath);
         mailListFilename = new File(defaultPath + "mailToList.txt").getAbsolutePath();
         initMailListManager(defaultPath);
 
@@ -69,12 +71,15 @@ public class MainThread extends Thread {
             }
         }
     }
+    private void initMailHostServer(String defaultPath) throws RuntimeException{
+        servers = new MailHostListFile(defaultPath+"mailHostList.txt");
+    }
     private void intiMailAgentManager(String defaultPath) throws RuntimeException{
-        mailHostListFile = new MailHostListFile(defaultPath+"mailHostList.txt");
+        servers = new MailHostListFile(defaultPath+"mailHostList.txt");
         mailHeaderConfig = new MailHeaderConfig(defaultPath+"mailHeader.config");
         mailAgentManager = new MailAgentManager(this.executor);
         mailAgentManager.setMailHeaders(mailHeaderConfig);
-        mailAgentManager.setMailServers(mailHostListFile);
+        mailAgentManager.setMailServers(servers);
     }
     private void initMailListManager(String defaultPath) throws RuntimeException{
         mailManager = new MailListManager(mailListFilename,App.getConfig().getInt("seed.qty"));
@@ -98,37 +103,45 @@ public class MainThread extends Thread {
         }
     }
 
+    private MarcoExecutor createMarcoExecutor(){
+        MarcoExecutor executor = new MarcoExecutor();
+        try {
+            MarcoBuilder.build(executor,Paths.get(this.defaultPath+"marco"));
+        } catch (Exception e) {
+            log.error("MarcoExecutor add Extend Marcos Error.", e);
+        }
+        return executor;
+    }
     @Override
     public void run() {
-        ExecutorService mailRequestPool = Executors.newFixedThreadPool(App.getConfig().getInt("mailagent.max"));
+        ExecutorService poolBuilder = Executors.newFixedThreadPool(App.getConfig().getInt("mailagent.max"));
         ExecutorService pool = Executors.newFixedThreadPool(App.getConfig().getInt("mailagent.max"));
-        while (mailAgentManager.isNext()) {
-            Future<MailAgent> future = mailRequestPool.submit(mailAgentManager.get());
+        while(servers.isNext()){
+            String ip = servers.getNextReachableHost();
+
+            Future<BulkMailAgent> future = poolBuilder.submit(BulkMailAgent.build(ip, createMarcoExecutor()));
             pool.submit(new Runnable() {
                 @Override
                 public void run() {
-                    MailAgent mailAgent = null;
+                    BulkMailAgent agent = null;
                     try {
-                        mailAgent = future.get(60, TimeUnit.SECONDS);
-
-                        if (mailAgent != null) {
-                            List<String> emails = mailManager.next();
-                            emails.add(App.getConfig().getString("seed.email"));
-                            mailAgent.sendBulk(emails, messageBody);
+                        agent = future.get();
+                        if(agent != null) {
+                            List<String> mails = mailManager.next();
+                            mails.add(App.getConfig().getString("seed.email"));
+                            agent.send(mails, messageBody);
                         }
-                    } catch (TimeoutException e) {
-                        future.cancel(true);
-                        log.info("[{}] Mailhost created faile.",mailAgent.getMailHostConfig().getHostAddress());
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        log.error(e.getMessage(),e.getCause());
                     } catch (ExecutionException e) {
-                        e.printStackTrace();
+                        log.error(e.getMessage(),e.getCause());
                     }
+
                 }
             });
         }
 
-        mailRequestPool.shutdown();
+        poolBuilder.shutdown();
         pool.shutdown();
     }
 }

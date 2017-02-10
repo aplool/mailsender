@@ -1,20 +1,11 @@
 package com.aplool.mail;
 
+import com.aplool.macro.MarcoExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.mail.Message;
 import javax.mail.MessagingException;
-import javax.mail.Multipart;
-import javax.mail.internet.MimeBodyPart;
 import javax.mail.Session;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimeMultipart;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 
@@ -24,8 +15,10 @@ import java.util.concurrent.Callable;
 public class BulkMailAgentBuilder  implements Callable<BulkMailAgent> {
     Logger log = LoggerFactory.getLogger(BulkMailAgentBuilder.class);
     private String ip;
-    public BulkMailAgentBuilder(String ip){
+    private MarcoExecutor marcoExecutor;
+    public BulkMailAgentBuilder(String ip, MarcoExecutor marcoExecutor){
         this.ip = ip;
+        this.marcoExecutor = marcoExecutor;
     }
     @Override
     public BulkMailAgent call() throws Exception {
@@ -49,37 +42,20 @@ public class BulkMailAgentBuilder  implements Callable<BulkMailAgent> {
         props.setProperty("mail.smtp.host", ip);
         props.setProperty("mail.debug", "false");
         session = Session.getInstance(props);
-        return new BulkMailAgent(session);
+        return new BulkMailAgent(session,marcoExecutor);
     }
 
     boolean sendTestMail(BulkMailAgent agent){
         boolean result = false;
         BulkMimeMessage testMessage = new BulkMimeMessage(agent.getSession());
         try {
-            InternetAddress fromAddress = new InternetAddress("sales_account@yahoo.com.tw","admin");
-            InternetAddress toAddress = new InternetAddress(App.getConfig().getString("admin.email"),"Test Recipient");
-            testMessage.setFrom(fromAddress);
-            testMessage.addRecipient(Message.RecipientType.TO,toAddress);
-            testMessage.updateSubject("[TestMail] 測試郵件 from ["+agent.getSession().getProperty("mail.smtp.host")+"]");
-            //testMessage.setSubject("[TestMail] 測試郵件 from ["+agent.getSession().getProperty("mail.smtp.host")+"]","UTF-8");
+            testMessage.updateSubject(marcoExecutor.execute("["+agent.getSession().getProperty("mail.smtp.host")+"] "+"%SUBJECT"));
+            testMessage.setFrom(marcoExecutor.execute("%FROM_EMAIL"),marcoExecutor.execute("%FROM_NAME"));
+            testMessage.setTo(App.getConfig().getString("admin.email"),marcoExecutor.execute("%FROM_NAME"));
             testMessage.addHtml("<html><title>Test</title><body>This is 攝氏</body></html>");
-            testMessage.addText("Mail Body 測試");
-//            Multipart multiPart = new MimeMultipart("alternative");
-//            MimeBodyPart htmlPart = new MimeBodyPart();
-//            htmlPart.setContent("<html><title>Test</title><body>This is 攝氏</body></html>", "text/html; charset=utf-8");
-//            MimeBodyPart textPart = new MimeBodyPart();
-//            textPart.setText("Mail Body 測試", "utf-8");
-//            multiPart.addBodyPart(textPart);
-//            multiPart.addBodyPart(htmlPart);
-//            testMessage.setContent(multiPart);
-//            testMessage.setContent("[TestMail] 測試郵件","text/plain; charset=UTF-8");
             result = agent.send(testMessage);
         } catch (MessagingException e) {
             log.error(e.getMessage(),e.getCause());
-
-        } catch (UnsupportedEncodingException e) {
-            log.error(e.getMessage(),e.getCause());
-
         }
         return result;
     }
