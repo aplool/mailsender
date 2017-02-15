@@ -72,7 +72,7 @@ public class BulkMailAgent {
             log.error(e.getMessage(),e.getCause());
             e.printStackTrace();
         } catch (MessagingException e) {
-            log.error(e.getMessage(),e.getCause());
+            //log.error(e.getMessage(),e.getCause());
         }
         return result;
     }

@@ -1,6 +1,10 @@
 package com.aplool.mail.utils;
 
+import com.aplool.util.RandomFileReader;
+
+import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -15,12 +19,15 @@ public class MailListManager {
     static String ERROR_MESSAGE_MAIL_LIST_EMPTY = "MailList is empty. [%s]";
     static String ERROR_MESSAGE_MAIL_LIST_IO = "MailSList is initial error . [%s]";
 
+    private boolean isCycleFetch = false;
     int seedQty;
     int index;
     int emailSize;
-
     String mailFileName;
     List<String> emails;
+    RandomFileReader fileReader;
+
+
     public MailListManager(String mailFileName, int seedQty){
         this.mailFileName = mailFileName;
         this.seedQty = seedQty;
@@ -28,31 +35,39 @@ public class MailListManager {
     }
 
     public void init() throws RuntimeException{
-        Stream<String> stream = null;
-        try {
-            stream = Files.lines(Paths.get(mailFileName));
-            emails = stream.filter(line->!line.isEmpty())
-                .collect(Collectors.toList());
-        } catch (IOException e) {
-            throw new RuntimeException(String.format(ERROR_MESSAGE_MAIL_LIST_IO,mailFileName),e.getCause());
-        }
-        if(emails.size()==0) throw new RuntimeException(String.format(ERROR_MESSAGE_MAIL_LIST_EMPTY,mailFileName));
-        if((emails.size()==1)&&(seedQty >1)){
-            int addQty = seedQty - emails.size();
-            for(int i=0;i<addQty;i++) {
-                emails.add(emails.get(0));
-            }
-        }
-        this.emailSize = emails.size();
-        this.index =0;
+        fileReader = new RandomFileReader(new File(this.mailFileName));
+//        List<String> stream = null;
+//        try {
+//            stream = Files.readAllLines(Paths.get(mailFileName), Charset.forName("ISO-8859-1"));
+//            //stream = Files.lines(Paths.get(mailFileName));
+//            emails = stream.stream().filter(line->!line.isEmpty())
+//                .collect(Collectors.toList());
+//        } catch (IOException e) {
+//            throw new RuntimeException(String.format(ERROR_MESSAGE_MAIL_LIST_IO,mailFileName),e.getCause());
+//        }
+//        if(emails.size()==0) throw new RuntimeException(String.format(ERROR_MESSAGE_MAIL_LIST_EMPTY,mailFileName));
+//        if((emails.size()==1)&&(seedQty >1)){
+//            int addQty = seedQty - emails.size();
+//            for(int i=0;i<addQty;i++) {
+//                emails.add(emails.get(0));
+//            }
+//        }
+//        this.emailSize = emails.size();
+//        this.index =0;
     }
 
     public boolean isNext(){
         if(emailSize > index) return true;
         return false;
     }
-    public synchronized  List<String> next(){
-        return next(false);
+    public synchronized  List<String> next() throws RuntimeException {
+        List<String> result;
+        try {
+            result = fileReader.getNextLines(seedQty);
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+        return result;
     }
     public synchronized List<String> next(boolean isCycleFetch){
         if(!isNext() && !isCycleFetch) return new ArrayList<String>();
@@ -67,5 +82,8 @@ public class MailListManager {
 
         index = nextIndex;
         return result;
+    }
+    public void close(){
+        fileReader.close();
     }
 }

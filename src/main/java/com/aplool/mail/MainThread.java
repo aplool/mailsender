@@ -135,6 +135,8 @@ public class MainThread extends Thread {
                         log.error(e.getMessage(),e.getCause());
                     } catch (ExecutionException e) {
                         log.error(e.getMessage(),e.getCause());
+                    } catch (RuntimeException e){
+                        log.error(e.getMessage(),e.getCause());
                     }
 
                 }
@@ -143,5 +145,6 @@ public class MainThread extends Thread {
 
         poolBuilder.shutdown();
         pool.shutdown();
+        mailManager.close();
     }
 }
