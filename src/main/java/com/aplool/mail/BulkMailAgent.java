@@ -14,6 +14,7 @@ import java.util.concurrent.Callable;
 public class BulkMailAgent {
 
     Logger log = LoggerFactory.getLogger(BulkMailAgent.class);
+    static Logger mailfailLog = LoggerFactory.getLogger("mail.fail");
 
     Session mailSession;
     Transport transport;
@@ -38,26 +39,27 @@ public class BulkMailAgent {
             log.error(e.getMessage(), e.getCause());
         }
     }
-    public void send(List<String> mails, String message) throws RuntimeException{
+    public void send(List<String> mails, String htmlMessage) throws RuntimeException{
         BulkMimeMessage mineMessage = new BulkMimeMessage(getSession());
         try {
-            mineMessage.addHtml(message);
+            mineMessage.addHtml(htmlMessage);
         } catch (MessagingException e) {
             throw new RuntimeException(e.getMessage());
         }
-        mails.stream().forEach(toEmail->{
+        int successCount =0;
+        for (String email : mails) {
             boolean isSend = false;
             try {
                 mineMessage.updateSubject(marcoExecutor.execute("%SUBJECT"));
                 mineMessage.setFrom(marcoExecutor.execute("%FROM_EMAIL"),marcoExecutor.execute("%FROM_NAME"));
-                mineMessage.setTo(toEmail,toEmail);
+                mineMessage.setTo(email,email);
                 isSend = send(mineMessage);
+                if(isSend) successCount++;
             } catch (MessagingException e) {
                 log.error(e.getMessage(),e.getCause());
             }
-            log.info("[{}] send {}, {}", mailSession.getProperty("mail.smtp.host"), toEmail, isSend);
-        });
-
+            log.info("[{}] send {}, {}", mailSession.getProperty("mail.smtp.host"), email, isSend);
+        }
     }
     public boolean send(Message message){
         boolean result = false;
@@ -70,9 +72,8 @@ public class BulkMailAgent {
             result = true;
         } catch (NoSuchProviderException e) {
             log.error(e.getMessage(),e.getCause());
-            e.printStackTrace();
         } catch (MessagingException e) {
-            //log.error(e.getMessage(),e.getCause());
+            mailfailLog.info("{} -> {}",e.getMessage(), e.getCause());
         }
         return result;
     }
@@ -80,5 +81,5 @@ public class BulkMailAgent {
 
     public static Callable<BulkMailAgent> build(String ip, MarcoExecutor marcoExecutor){
         return new BulkMailAgentBuilder(ip, marcoExecutor);
-    }
+}
 }
