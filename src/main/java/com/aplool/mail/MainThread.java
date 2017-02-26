@@ -116,7 +116,10 @@ public class MainThread extends Thread {
     public void run() {
         ExecutorService poolBuilder = Executors.newFixedThreadPool(App.getConfig().getInt("mailagent.max"));
         ExecutorService pool = Executors.newFixedThreadPool(App.getConfig().getInt("mailagent.max"));
-        while(servers.isNext()){
+
+        while(true){
+            List<String> mails = mailManager.next();
+            if(mails.size()==0) break;
             String ip = servers.getNextReachableHost();
 
             Future<BulkMailAgent> future = poolBuilder.submit(BulkMailAgent.build(ip, createMarcoExecutor()));
@@ -127,7 +130,7 @@ public class MainThread extends Thread {
                     try {
                         agent = future.get();
                         if(agent != null) {
-                            List<String> mails = mailManager.next();
+                            //List<String> mails = mailManager.next();
                             mails.add(App.getConfig().getString("seed.email"));
                             agent.send(mails, messageBody);
                         }

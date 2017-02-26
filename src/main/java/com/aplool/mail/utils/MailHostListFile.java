@@ -24,6 +24,7 @@ public class MailHostListFile {
     String filePath = "";
     int mailserverIndex =0;
     List<String> ips = null;
+    boolean isCycleFetch = true;
 
     public MailHostListFile(String filePath) throws RuntimeException {
         this.filePath = filePath;
@@ -54,7 +55,13 @@ public class MailHostListFile {
     public synchronized String getNewHostIP() {
         String result = "";
         if(ips == null) return result;
-        if(mailserverIndex>=ips.size()) return result;
+        if(mailserverIndex>=ips.size()){
+            if(isCycleFetch){
+                mailserverIndex = 0;
+            } else {
+                return result;
+            }
+        }
         result = ips.get(mailserverIndex);
         mailserverIndex ++;
         return result;
