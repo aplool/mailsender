@@ -18,10 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 /**
  * Created by longtai on 2017/2/6.
@@ -149,5 +146,22 @@ public class MainThread extends Thread {
         poolBuilder.shutdown();
         pool.shutdown();
         mailManager.close();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while(true){
+                    if(pool.isTerminated()) {
+                        log.info("All mail is be send. Please Close this program.");
+
+                    } else {
+                        try {
+                            Thread.sleep(10000);
+                        } catch (InterruptedException e) {
+
+                        }
+                    }
+                }
+            }
+        }).run();
     }
 }
